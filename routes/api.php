@@ -1,12 +1,22 @@
 <?php
 
+use App\Http\Controllers\Api\ApprovalController;
 use App\Http\Controllers\Api\AuthController;
-use Illuminate\Http\Request;
+use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\CommentController;
+use App\Http\Controllers\Api\IdeaController;
+use App\Http\Controllers\Api\TagController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+
+// Public read-only routes (no auth required)
+Route::get('/categories', [CategoryController::class, 'index']);
+Route::get('/categories/{category}', [CategoryController::class, 'show']);
+Route::get('/tags', [TagController::class, 'index']);
+Route::get('/tags/{tag}', [TagController::class, 'show']);
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
@@ -14,10 +24,29 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'user']);
 
-    // Resource routes will be added here
-    // Route::apiResource('ideas', IdeaController::class);
-    // Route::apiResource('comments', CommentController::class);
-    // Route::apiResource('approvals', ApprovalController::class);
-    // Route::apiResource('categories', CategoryController::class);
-    // Route::apiResource('tags', TagController::class);
+    // Ideas
+    Route::apiResource('ideas', IdeaController::class);
+    Route::post('/ideas/{idea}/submit', [IdeaController::class, 'submit']);
+    Route::post('/ideas/{idea}/like', [IdeaController::class, 'like']);
+
+    // Comments
+    Route::get('/ideas/{idea}/comments', [CommentController::class, 'index']);
+    Route::apiResource('comments', CommentController::class)->except(['index']);
+    Route::post('/comments/{comment}/like', [CommentController::class, 'like']);
+
+    // Approvals
+    Route::apiResource('approvals', ApprovalController::class);
+    Route::post('/approvals/{approval}/approve', [ApprovalController::class, 'approve']);
+    Route::post('/approvals/{approval}/reject', [ApprovalController::class, 'reject']);
+    Route::get('/approvals/pending/count', [ApprovalController::class, 'pending']);
+
+    // Categories (protected operations)
+    Route::post('/categories', [CategoryController::class, 'store']);
+    Route::put('/categories/{category}', [CategoryController::class, 'update']);
+    Route::delete('/categories/{category}', [CategoryController::class, 'destroy']);
+
+    // Tags (protected operations)
+    Route::post('/tags', [TagController::class, 'store']);
+    Route::put('/tags/{tag}', [TagController::class, 'update']);
+    Route::delete('/tags/{tag}', [TagController::class, 'destroy']);
 });
