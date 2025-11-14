@@ -4,8 +4,8 @@
   
 ![IdeaHub Logo](https://img.shields.io/badge/IdeaHub-Innovation_Platform-blue)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Laravel](https://img.shields.io/badge/Laravel-11.x-red.svg)](https://laravel.com)
-[![React](https://img.shields.io/badge/React-18.x-blue.svg)](https://reactjs.org)
+[![Laravel](https://img.shields.io/badge/Laravel-12.x-red.svg)](https://laravel.com)
+[![React](https://img.shields.io/badge/React-19.x-blue.svg)](https://reactjs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![GitHub Stars](https://img.shields.io/github/stars/yourusername/ideahub.svg)](https://github.com/yourusername/ideahub/stargazers)
@@ -171,7 +171,7 @@ docker-compose exec app php artisan migrate --seed
 ## 🛠 Tech Stack
 
 ### Backend
-- **Framework:** Laravel 11.x
+- **Framework:** Laravel 12.x
 - **Language:** PHP 8.2+
 - **Database:** MySQL 8.0+ / PostgreSQL 14+
 - **Cache:** Redis
@@ -181,7 +181,7 @@ docker-compose exec app php artisan migrate --seed
 - **Real-time:** Laravel Echo with Pusher/Soketi
 
 ### Frontend
-- **Framework:** React 18.x with TypeScript
+- **Framework:** React 19.x with TypeScript
 - **Build Tool:** Vite
 - **Routing:** React Router v6
 - **State Management:** Redux Toolkit / Zustand
