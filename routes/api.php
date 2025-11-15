@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AnalyticsController;
 use App\Http\Controllers\Api\ApprovalController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
@@ -49,4 +50,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/tags', [TagController::class, 'store']);
     Route::put('/tags/{tag}', [TagController::class, 'update']);
     Route::delete('/tags/{tag}', [TagController::class, 'destroy']);
+
+    // Analytics
+    Route::get('/analytics/overview', [AnalyticsController::class, 'overview']);
+    Route::get('/analytics/ideas-trend', [AnalyticsController::class, 'ideasTrend']);
+    Route::get('/analytics/category-distribution', [AnalyticsController::class, 'categoryDistribution']);
+    Route::get('/analytics/status-breakdown', [AnalyticsController::class, 'statusBreakdown']);
+    Route::get('/analytics/leaderboard', [AnalyticsController::class, 'leaderboard']);
+    Route::get('/analytics/department-stats', [AnalyticsController::class, 'departmentStats']);
+    Route::get('/analytics/recent-activity', [AnalyticsController::class, 'recentActivity']);
+    Route::get('/analytics/user-stats', [AnalyticsController::class, 'userStats']);
 });
