@@ -4,7 +4,8 @@ import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchIdeas, setFilters, likeIdea } from '../store/ideasSlice';
 import { fetchCategories } from '../store/categoriesSlice';
 import IdeaCard from '../components/ideas/IdeaCard';
-import { MagnifyingGlassIcon, FunnelIcon } from '@heroicons/react/24/outline';
+import AdvancedFilters from '../components/search/AdvancedFilters';
+import { MagnifyingGlassIcon, FunnelIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import type { IdeaStatus } from '../types';
 
 const Ideas = () => {
@@ -24,12 +25,20 @@ const Ideas = () => {
     const categoryId = searchParams.get('category');
     const status = searchParams.get('status') as IdeaStatus | null;
     const search = searchParams.get('search');
+    const userId = searchParams.get('user_id');
+    const tags = searchParams.get('tags');
+    const dateFrom = searchParams.get('date_from');
+    const dateTo = searchParams.get('date_to');
 
     const newFilters = {
       ...filters,
       ...(categoryId && { category_id: parseInt(categoryId) }),
       ...(status && { status }),
       ...(search && { search }),
+      ...(userId && { user_id: parseInt(userId) }),
+      ...(tags && { tags: tags.split(',').map(Number) }),
+      ...(dateFrom && { date_from: dateFrom }),
+      ...(dateTo && { date_to: dateTo }),
     };
 
     dispatch(setFilters(newFilters));
@@ -46,13 +55,30 @@ const Ideas = () => {
     }
   };
 
-  const handleFilterChange = (key: string, value: string) => {
-    if (value) {
-      setSearchParams({ ...Object.fromEntries(searchParams), [key]: value });
-    } else {
-      searchParams.delete(key);
-      setSearchParams(searchParams);
+  const handleFilterChange = (newFilters: any) => {
+    const params: Record<string, string> = {};
+
+    // Preserve existing search query
+    if (searchQuery) {
+      params.search = searchQuery;
     }
+
+    // Add new filter params
+    if (newFilters.status) params.status = newFilters.status;
+    if (newFilters.category_id) params.category = newFilters.category_id.toString();
+    if (newFilters.user_id) params.user_id = newFilters.user_id.toString();
+    if (newFilters.tags && newFilters.tags.length > 0) {
+      params.tags = newFilters.tags.join(',');
+    }
+    if (newFilters.date_from) params.date_from = newFilters.date_from;
+    if (newFilters.date_to) params.date_to = newFilters.date_to;
+
+    setSearchParams(params);
+  };
+
+  const handleClearFilters = () => {
+    setSearchParams({});
+    setSearchQuery('');
   };
 
   const handleLike = (id: number) => {
@@ -85,9 +111,23 @@ const Ideas = () => {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search ideas..."
-            className="block w-full rounded-md border-0 py-2 pl-10 pr-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
+            placeholder="Search ideas by title or description..."
+            className="block w-full rounded-md border-0 py-2 pl-10 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
           />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery('');
+                const params = Object.fromEntries(searchParams);
+                delete params.search;
+                setSearchParams(params);
+              }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              <XMarkIcon className="h-5 w-5" />
+            </button>
+          )}
         </div>
         <button
           type="submit"
@@ -97,61 +137,48 @@ const Ideas = () => {
         </button>
       </form>
 
-      {/* Filters Panel */}
-      {showFilters && (
-        <div className="rounded-lg border border-gray-200 bg-white p-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Status</label>
-              <select
-                value={searchParams.get('status') || ''}
-                onChange={(e) => handleFilterChange('status', e.target.value)}
-                className="mt-1 block w-full rounded-md border-0 py-2 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-blue-600 sm:text-sm sm:leading-6"
-              >
-                <option value="">All Statuses</option>
-                <option value="draft">Draft</option>
-                <option value="submitted">Submitted</option>
-                <option value="under_review">Under Review</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
-                <option value="implemented">Implemented</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Category</label>
-              <select
-                value={searchParams.get('category') || ''}
-                onChange={(e) => handleFilterChange('category', e.target.value)}
-                className="mt-1 block w-full rounded-md border-0 py-2 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-blue-600 sm:text-sm sm:leading-6"
-              >
-                <option value="">All Categories</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Sort By</label>
-              <select
-                value={filters.sort_by || 'created_at'}
-                onChange={(e) => {
-                  dispatch(setFilters({ ...filters, sort_by: e.target.value as any }));
-                  dispatch(fetchIdeas({ ...filters, sort_by: e.target.value as any }));
-                }}
-                className="mt-1 block w-full rounded-md border-0 py-2 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-blue-600 sm:text-sm sm:leading-6"
-              >
-                <option value="created_at">Newest</option>
-                <option value="likes_count">Most Liked</option>
-                <option value="comments_count">Most Discussed</option>
-                <option value="views_count">Most Viewed</option>
-              </select>
-            </div>
-          </div>
+      {/* Sort By */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-medium text-gray-700">Sort by:</label>
+          <select
+            value={filters.sort_by || 'created_at'}
+            onChange={(e) => {
+              dispatch(setFilters({ ...filters, sort_by: e.target.value as any }));
+              dispatch(fetchIdeas({ ...filters, sort_by: e.target.value as any }));
+            }}
+            className="rounded-md border-0 py-1.5 pl-3 pr-10 text-sm text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-blue-600"
+          >
+            <option value="created_at">Newest</option>
+            <option value="likes_count">Most Liked</option>
+            <option value="comments_count">Most Discussed</option>
+            <option value="views_count">Most Viewed</option>
+            <option value="title">Title (A-Z)</option>
+          </select>
         </div>
+      </div>
+
+      {/* Advanced Filters Panel */}
+      {showFilters && (
+        <AdvancedFilters
+          filters={{
+            status: searchParams.get('status') || undefined,
+            category_id: searchParams.get('category')
+              ? parseInt(searchParams.get('category')!)
+              : undefined,
+            user_id: searchParams.get('user_id')
+              ? parseInt(searchParams.get('user_id')!)
+              : undefined,
+            tags: searchParams.get('tags')
+              ? searchParams.get('tags')!.split(',').map(Number)
+              : undefined,
+            date_from: searchParams.get('date_from') || undefined,
+            date_to: searchParams.get('date_to') || undefined,
+          }}
+          categories={categories}
+          onFilterChange={handleFilterChange}
+          onClearFilters={handleClearFilters}
+        />
       )}
 
       {/* Ideas Grid */}

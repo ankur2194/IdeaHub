@@ -31,8 +31,29 @@ class IdeaController extends Controller
             $query->where('category_id', $request->category_id);
         }
 
-        // Search by title or description
-        if ($request->has('search')) {
+        // Filter by user/author
+        if ($request->has('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
+
+        // Filter by tags (multiple tags support)
+        if ($request->has('tags')) {
+            $tags = is_array($request->tags) ? $request->tags : explode(',', $request->tags);
+            $query->whereHas('tags', function ($q) use ($tags) {
+                $q->whereIn('tags.id', $tags);
+            });
+        }
+
+        // Date range filtering
+        if ($request->has('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+        if ($request->has('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        // Search by title or description (enhanced)
+        if ($request->has('search') && $request->search) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
@@ -43,7 +64,14 @@ class IdeaController extends Controller
         // Sort options
         $sortBy = $request->get('sort_by', 'created_at');
         $sortOrder = $request->get('sort_order', 'desc');
-        $query->orderBy($sortBy, $sortOrder);
+
+        // Validate sort column to prevent SQL injection
+        $allowedSorts = ['created_at', 'updated_at', 'likes_count', 'comments_count', 'views_count', 'title'];
+        if (in_array($sortBy, $allowedSorts)) {
+            $query->orderBy($sortBy, $sortOrder);
+        } else {
+            $query->orderBy('created_at', 'desc');
+        }
 
         $ideas = $query->paginate($request->get('per_page', 15));
 

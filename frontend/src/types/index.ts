@@ -181,8 +181,12 @@ export interface CreateCommentData {
 export interface IdeaFilters {
   status?: IdeaStatus;
   category_id?: number;
+  user_id?: number;
+  tags?: number[] | string;
+  date_from?: string;
+  date_to?: string;
   search?: string;
-  sort_by?: 'created_at' | 'likes_count' | 'comments_count' | 'views_count';
+  sort_by?: 'created_at' | 'likes_count' | 'comments_count' | 'views_count' | 'title';
   sort_order?: 'asc' | 'desc';
   per_page?: number;
   page?: number;
