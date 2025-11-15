@@ -57,7 +57,7 @@ export const fetchIdea = createAsyncThunk(
 
 export const createIdea = createAsyncThunk(
   'ideas/createIdea',
-  async (data: CreateIdeaData, { rejectWithValue }) => {
+  async (data: CreateIdeaData | FormData, { rejectWithValue }) => {
     try {
       const response = await ideaService.createIdea(data);
       return response.data;
@@ -238,13 +238,15 @@ const ideasSlice = createSlice({
     // Like idea
     builder
       .addCase(likeIdea.fulfilled, (state, action) => {
-        const { id, likes_count } = action.payload;
+        const { id, liked, likes_count } = action.payload;
         const idea = state.ideas.find((i) => i.id === id);
         if (idea) {
           idea.likes_count = likes_count;
+          idea.liked = liked;
         }
         if (state.currentIdea?.id === id) {
           state.currentIdea.likes_count = likes_count;
+          state.currentIdea.liked = liked;
         }
       });
   },

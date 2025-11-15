@@ -21,8 +21,11 @@ export const ideaService = {
   /**
    * Create a new idea
    */
-  createIdea: async (data: CreateIdeaData): Promise<ApiResponse<Idea>> => {
-    const response = await api.post('/ideas', data);
+  createIdea: async (data: CreateIdeaData | FormData): Promise<ApiResponse<Idea>> => {
+    const config = data instanceof FormData ? {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    } : {};
+    const response = await api.post('/ideas', data, config);
     return response.data;
   },
 

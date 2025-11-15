@@ -1,0 +1,273 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\Badge;
+use Illuminate\Database\Seeder;
+
+class BadgeSeeder extends Seeder
+{
+    /**
+     * Run the database seeds.
+     */
+    public function run(): void
+    {
+        $badges = [
+            // Idea Submission Badges
+            [
+                'name' => 'First Idea',
+                'slug' => 'first-idea',
+                'description' => 'Submitted your first idea to the platform',
+                'icon' => '💡',
+                'type' => 'achievement',
+                'category' => 'ideas',
+                'criteria' => ['ideas_submitted' => 1],
+                'points_reward' => 10,
+                'rarity' => 'common',
+                'order' => 1,
+            ],
+            [
+                'name' => 'Idea Generator',
+                'slug' => 'idea-generator',
+                'description' => 'Submitted 10 ideas',
+                'icon' => '🌟',
+                'type' => 'achievement',
+                'category' => 'ideas',
+                'criteria' => ['ideas_submitted' => 10],
+                'points_reward' => 50,
+                'rarity' => 'rare',
+                'order' => 2,
+            ],
+            [
+                'name' => 'Innovation Machine',
+                'slug' => 'innovation-machine',
+                'description' => 'Submitted 50 ideas',
+                'icon' => '🚀',
+                'type' => 'achievement',
+                'category' => 'ideas',
+                'criteria' => ['ideas_submitted' => 50],
+                'points_reward' => 200,
+                'rarity' => 'epic',
+                'order' => 3,
+            ],
+
+            // Approval Badges
+            [
+                'name' => 'First Approval',
+                'slug' => 'first-approval',
+                'description' => 'Got your first idea approved',
+                'icon' => '✅',
+                'type' => 'achievement',
+                'category' => 'approvals',
+                'criteria' => ['ideas_approved' => 1],
+                'points_reward' => 25,
+                'rarity' => 'common',
+                'order' => 10,
+            ],
+            [
+                'name' => 'Approved Innovator',
+                'slug' => 'approved-innovator',
+                'description' => 'Got 5 ideas approved',
+                'icon' => '🎯',
+                'type' => 'achievement',
+                'category' => 'approvals',
+                'criteria' => ['ideas_approved' => 5],
+                'points_reward' => 100,
+                'rarity' => 'rare',
+                'order' => 11,
+            ],
+            [
+                'name' => 'Elite Innovator',
+                'slug' => 'elite-innovator',
+                'description' => 'Got 25 ideas approved',
+                'icon' => '👑',
+                'type' => 'achievement',
+                'category' => 'approvals',
+                'criteria' => ['ideas_approved' => 25],
+                'points_reward' => 500,
+                'rarity' => 'legendary',
+                'order' => 12,
+            ],
+
+            // Comment Badges
+            [
+                'name' => 'First Comment',
+                'slug' => 'first-comment',
+                'description' => 'Posted your first comment',
+                'icon' => '💬',
+                'type' => 'achievement',
+                'category' => 'comments',
+                'criteria' => ['comments_posted' => 1],
+                'points_reward' => 5,
+                'rarity' => 'common',
+                'order' => 20,
+            ],
+            [
+                'name' => 'Conversationalist',
+                'slug' => 'conversationalist',
+                'description' => 'Posted 25 comments',
+                'icon' => '🗣️',
+                'type' => 'achievement',
+                'category' => 'comments',
+                'criteria' => ['comments_posted' => 25],
+                'points_reward' => 50,
+                'rarity' => 'rare',
+                'order' => 21,
+            ],
+            [
+                'name' => 'Discussion Champion',
+                'slug' => 'discussion-champion',
+                'description' => 'Posted 100 comments',
+                'icon' => '🏆',
+                'type' => 'achievement',
+                'category' => 'comments',
+                'criteria' => ['comments_posted' => 100],
+                'points_reward' => 150,
+                'rarity' => 'epic',
+                'order' => 22,
+            ],
+
+            // Like Badges
+            [
+                'name' => 'Popular Idea',
+                'slug' => 'popular-idea',
+                'description' => 'Received 10 likes',
+                'icon' => '❤️',
+                'type' => 'achievement',
+                'category' => 'likes',
+                'criteria' => ['likes_received' => 10],
+                'points_reward' => 20,
+                'rarity' => 'common',
+                'order' => 30,
+            ],
+            [
+                'name' => 'Crowd Favorite',
+                'slug' => 'crowd-favorite',
+                'description' => 'Received 50 likes',
+                'icon' => '⭐',
+                'type' => 'achievement',
+                'category' => 'likes',
+                'criteria' => ['likes_received' => 50],
+                'points_reward' => 75,
+                'rarity' => 'rare',
+                'order' => 31,
+            ],
+            [
+                'name' => 'Viral Innovator',
+                'slug' => 'viral-innovator',
+                'description' => 'Received 100 likes',
+                'icon' => '🔥',
+                'type' => 'achievement',
+                'category' => 'likes',
+                'criteria' => ['likes_received' => 100],
+                'points_reward' => 200,
+                'rarity' => 'epic',
+                'order' => 32,
+            ],
+
+            // Level Milestone Badges
+            [
+                'name' => 'Rising Star',
+                'slug' => 'rising-star',
+                'description' => 'Reached Level 5',
+                'icon' => '🌠',
+                'type' => 'milestone',
+                'category' => 'levels',
+                'criteria' => ['level' => 5],
+                'points_reward' => 50,
+                'rarity' => 'common',
+                'order' => 40,
+            ],
+            [
+                'name' => 'Active Contributor',
+                'slug' => 'active-contributor',
+                'description' => 'Reached Level 10',
+                'icon' => '💪',
+                'type' => 'milestone',
+                'category' => 'levels',
+                'criteria' => ['level' => 10],
+                'points_reward' => 100,
+                'rarity' => 'rare',
+                'order' => 41,
+            ],
+            [
+                'name' => 'Senior Contributor',
+                'slug' => 'senior-contributor',
+                'description' => 'Reached Level 20',
+                'icon' => '🎖️',
+                'type' => 'milestone',
+                'category' => 'levels',
+                'criteria' => ['level' => 20],
+                'points_reward' => 200,
+                'rarity' => 'epic',
+                'order' => 42,
+            ],
+            [
+                'name' => 'Expert Innovator',
+                'slug' => 'expert-innovator',
+                'description' => 'Reached Level 30',
+                'icon' => '🏅',
+                'type' => 'milestone',
+                'category' => 'levels',
+                'criteria' => ['level' => 30],
+                'points_reward' => 300,
+                'rarity' => 'epic',
+                'order' => 43,
+            ],
+            [
+                'name' => 'Visionary Leader',
+                'slug' => 'visionary-leader',
+                'description' => 'Reached Level 40',
+                'icon' => '💎',
+                'type' => 'milestone',
+                'category' => 'levels',
+                'criteria' => ['level' => 40],
+                'points_reward' => 500,
+                'rarity' => 'legendary',
+                'order' => 44,
+            ],
+            [
+                'name' => 'Innovation Master',
+                'slug' => 'innovation-master',
+                'description' => 'Reached Level 50 - The ultimate achievement!',
+                'icon' => '👑',
+                'type' => 'milestone',
+                'category' => 'levels',
+                'criteria' => ['level' => 50],
+                'points_reward' => 1000,
+                'rarity' => 'legendary',
+                'order' => 45,
+            ],
+
+            // Special Badges
+            [
+                'name' => 'Early Adopter',
+                'slug' => 'early-adopter',
+                'description' => 'One of the first users on the platform',
+                'icon' => '🎁',
+                'type' => 'special',
+                'category' => null,
+                'criteria' => ['user_id' => '<= 100'],
+                'points_reward' => 100,
+                'rarity' => 'rare',
+                'order' => 90,
+            ],
+            [
+                'name' => 'Team Player',
+                'slug' => 'team-player',
+                'description' => 'Actively participates in discussions and collaboration',
+                'icon' => '🤝',
+                'type' => 'special',
+                'category' => null,
+                'criteria' => ['comments_posted' => '>=50', 'likes_given' => '>=50'],
+                'points_reward' => 150,
+                'rarity' => 'epic',
+                'order' => 91,
+            ],
+        ];
+
+        foreach ($badges as $badge) {
+            Badge::create($badge);
+        }
+    }
+}

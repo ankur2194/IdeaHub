@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Idea;
+use App\Services\NotificationService;
+use App\Services\PointsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class IdeaController extends Controller
@@ -28,8 +31,29 @@ class IdeaController extends Controller
             $query->where('category_id', $request->category_id);
         }
 
-        // Search by title or description
-        if ($request->has('search')) {
+        // Filter by user/author
+        if ($request->has('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
+
+        // Filter by tags (multiple tags support)
+        if ($request->has('tags')) {
+            $tags = is_array($request->tags) ? $request->tags : explode(',', $request->tags);
+            $query->whereHas('tags', function ($q) use ($tags) {
+                $q->whereIn('tags.id', $tags);
+            });
+        }
+
+        // Date range filtering
+        if ($request->has('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+        if ($request->has('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        // Search by title or description (enhanced)
+        if ($request->has('search') && $request->search) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
@@ -40,9 +64,25 @@ class IdeaController extends Controller
         // Sort options
         $sortBy = $request->get('sort_by', 'created_at');
         $sortOrder = $request->get('sort_order', 'desc');
-        $query->orderBy($sortBy, $sortOrder);
+
+        // Validate sort column to prevent SQL injection
+        $allowedSorts = ['created_at', 'updated_at', 'likes_count', 'comments_count', 'views_count', 'title'];
+        if (in_array($sortBy, $allowedSorts)) {
+            $query->orderBy($sortBy, $sortOrder);
+        } else {
+            $query->orderBy('created_at', 'desc');
+        }
 
         $ideas = $query->paginate($request->get('per_page', 15));
+
+        // Add 'liked' attribute to each idea
+        if (Auth::check()) {
+            $userId = Auth::id();
+            $ideas->getCollection()->transform(function ($idea) use ($userId) {
+                $idea->liked = $idea->likedBy()->where('user_id', $userId)->exists();
+                return $idea;
+            });
+        }
 
         return response()->json([
             'success' => true,
@@ -62,7 +102,25 @@ class IdeaController extends Controller
             'is_anonymous' => 'boolean',
             'tags' => 'nullable|array',
             'tags.*' => 'exists:tags,id',
+            'attachments' => 'nullable|array',
+            'attachments.*' => 'file|max:10240|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,gif,zip',
         ]);
+
+        // Handle file uploads
+        $attachmentPaths = [];
+        if ($request->hasFile('attachments')) {
+            foreach ($request->file('attachments') as $file) {
+                $filename = time() . '_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
+                $path = $file->storeAs('idea-attachments', $filename, 'public');
+
+                $attachmentPaths[] = [
+                    'name' => $file->getClientOriginalName(),
+                    'path' => $path,
+                    'size' => $file->getSize(),
+                    'type' => $file->getMimeType(),
+                ];
+            }
+        }
 
         $idea = Idea::create([
             'title' => $validated['title'],
@@ -71,6 +129,7 @@ class IdeaController extends Controller
             'category_id' => $validated['category_id'] ?? null,
             'is_anonymous' => $validated['is_anonymous'] ?? false,
             'status' => 'draft',
+            'attachments' => !empty($attachmentPaths) ? $attachmentPaths : null,
         ]);
 
         // Attach tags if provided
@@ -96,6 +155,11 @@ class IdeaController extends Controller
         $idea->increment('views_count');
 
         $idea->load(['user', 'category', 'tags', 'comments.user', 'approvals.approver']);
+
+        // Add 'liked' attribute
+        if (Auth::check()) {
+            $idea->liked = $idea->likedBy()->where('user_id', Auth::id())->exists();
+        }
 
         return response()->json([
             'success' => true,
@@ -123,9 +187,47 @@ class IdeaController extends Controller
             'is_anonymous' => 'boolean',
             'tags' => 'nullable|array',
             'tags.*' => 'exists:tags,id',
+            'attachments' => 'nullable|array',
+            'attachments.*' => 'file|max:10240|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,gif,zip',
+            'remove_attachments' => 'nullable|array',
         ]);
 
-        $idea->update($validated);
+        // Handle new file uploads
+        $existingAttachments = $idea->attachments ?? [];
+        if ($request->hasFile('attachments')) {
+            foreach ($request->file('attachments') as $file) {
+                $filename = time() . '_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
+                $path = $file->storeAs('idea-attachments', $filename, 'public');
+
+                $existingAttachments[] = [
+                    'name' => $file->getClientOriginalName(),
+                    'path' => $path,
+                    'size' => $file->getSize(),
+                    'type' => $file->getMimeType(),
+                ];
+            }
+        }
+
+        // Handle attachment removal
+        if ($request->has('remove_attachments')) {
+            $removeIndexes = $request->input('remove_attachments');
+            foreach ($removeIndexes as $index) {
+                if (isset($existingAttachments[$index])) {
+                    // Delete file from storage
+                    Storage::disk('public')->delete($existingAttachments[$index]['path']);
+                    unset($existingAttachments[$index]);
+                }
+            }
+            $existingAttachments = array_values($existingAttachments); // Re-index array
+        }
+
+        $updateData = array_filter($validated, function ($key) {
+            return !in_array($key, ['tags', 'attachments', 'remove_attachments']);
+        }, ARRAY_FILTER_USE_KEY);
+
+        $updateData['attachments'] = !empty($existingAttachments) ? $existingAttachments : null;
+
+        $idea->update($updateData);
 
         // Sync tags if provided
         if (isset($validated['tags'])) {
@@ -154,6 +256,13 @@ class IdeaController extends Controller
             ], 403);
         }
 
+        // Delete associated attachments from storage
+        if ($idea->attachments) {
+            foreach ($idea->attachments as $attachment) {
+                Storage::disk('public')->delete($attachment['path']);
+            }
+        }
+
         $idea->delete();
 
         return response()->json([
@@ -165,7 +274,7 @@ class IdeaController extends Controller
     /**
      * Submit an idea for approval.
      */
-    public function submit(Idea $idea)
+    public function submit(Idea $idea, PointsService $pointsService, NotificationService $notificationService, \App\Services\ApprovalWorkflowService $workflowService, \App\Services\GamificationService $gamificationService)
     {
         if ($idea->user_id !== Auth::id()) {
             return response()->json([
@@ -186,24 +295,78 @@ class IdeaController extends Controller
             'submitted_at' => now(),
         ]);
 
+        // Award points for idea submission
+        $pointsService->awardIdeaSubmitted($idea->user);
+
+        // Track gamification (XP, badges, levels)
+        $gamificationService->trackIdeaSubmitted($idea->user);
+
+        // Initialize approval workflow
+        $idea->load('user', 'category');
+        $approvals = $workflowService->initializeWorkflow($idea);
+
+        // Notify first-level approvers
+        $firstLevelApprovals = $approvals->where('level', 1);
+        foreach ($firstLevelApprovals as $approval) {
+            $notificationService->notifyApprovalRequest($approval);
+        }
+
         return response()->json([
             'success' => true,
-            'message' => 'Idea submitted for approval',
-            'data' => $idea,
+            'message' => "Idea submitted for approval (+10 points, +20 XP). {$approvals->count()} approver(s) notified.",
+            'data' => [
+                'idea' => $idea,
+                'approvals_created' => $approvals->count(),
+                'first_level_approvers' => $firstLevelApprovals->count(),
+            ],
         ]);
     }
 
     /**
-     * Like an idea.
+     * Like or unlike an idea.
      */
-    public function like(Idea $idea)
+    public function like(Idea $idea, PointsService $pointsService, \App\Services\GamificationService $gamificationService)
     {
-        $idea->increment('likes_count');
+        $user = Auth::user();
+
+        // Check if user already liked this idea
+        if ($idea->likedBy()->where('user_id', $user->id)->exists()) {
+            // Unlike: remove the like
+            $idea->likedBy()->detach($user->id);
+            $idea->decrement('likes_count');
+
+            // Deduct points from idea author
+            if ($idea->user) {
+                $pointsService->deductLikeRemoved($idea->user);
+            }
+
+            $liked = false;
+            $message = 'Idea unliked';
+        } else {
+            // Like: add the like
+            $idea->likedBy()->attach($user->id);
+            $idea->increment('likes_count');
+
+            // Award points to idea author
+            if ($idea->user) {
+                $pointsService->awardLikeReceived($idea->user);
+                $gamificationService->trackLikeReceived($idea->user);
+            }
+
+            // Track like given by current user
+            $gamificationService->trackLikeGiven($user);
+
+            $liked = true;
+            $message = 'Idea liked (+2 XP)';
+        }
 
         return response()->json([
             'success' => true,
-            'message' => 'Idea liked',
-            'data' => ['likes_count' => $idea->likes_count],
+            'message' => $message,
+            'data' => [
+                'liked' => $liked,
+                'likes_count' => $idea->likes_count,
+            ],
         ]);
     }
 }

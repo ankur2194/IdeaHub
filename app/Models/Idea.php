@@ -93,6 +93,14 @@ class Idea extends Model
     }
 
     /**
+     * The users who liked this idea.
+     */
+    public function likedBy(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'idea_likes')->withTimestamps();
+    }
+
+    /**
      * Scope a query to only include ideas with a specific status.
      */
     public function scopeStatus($query, string $status)

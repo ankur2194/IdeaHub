@@ -9,10 +9,12 @@ import TagBadge from '../components/common/TagBadge';
 import Avatar from '../components/common/Avatar';
 import CommentList from '../components/comments/CommentList';
 import CommentForm from '../components/comments/CommentForm';
+import { AttachmentList } from '../components/AttachmentList';
+import WorkflowStatus from '../components/approvals/WorkflowStatus';
 import { formatDateTime } from '../utils/formatters';
 import { canEditIdea, canDeleteIdea, canSubmitIdea } from '../utils/statusHelpers';
 import {
-  HeartIcon,
+  HeartIcon as HeartIconOutline,
   ChatBubbleLeftIcon,
   EyeIcon,
   PencilIcon,
@@ -20,6 +22,7 @@ import {
   PaperAirplaneIcon,
   ArrowLeftIcon,
 } from '@heroicons/react/24/outline';
+import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
 import type { Comment } from '../types';
 
 const IdeaDetail = () => {
@@ -225,9 +228,15 @@ const IdeaDetail = () => {
           <div className="mt-4 flex items-center space-x-6 text-sm text-gray-500">
             <button
               onClick={handleLike}
-              className="flex items-center space-x-1 hover:text-red-600 transition-colors"
+              className={`flex items-center space-x-1 hover:text-red-600 transition-colors ${
+                idea.liked ? 'text-red-600' : ''
+              }`}
             >
-              <HeartIcon className="h-5 w-5" />
+              {idea.liked ? (
+                <HeartIconSolid className="h-5 w-5" />
+              ) : (
+                <HeartIconOutline className="h-5 w-5" />
+              )}
               <span>{idea.likes_count || 0} likes</span>
             </button>
             <div className="flex items-center space-x-1">
@@ -248,6 +257,20 @@ const IdeaDetail = () => {
             {idea.description}
           </div>
         </div>
+
+        {/* Attachments */}
+        {idea.attachments && idea.attachments.length > 0 && (
+          <div className="border-t border-gray-200 p-6">
+            <AttachmentList attachments={idea.attachments} />
+          </div>
+        )}
+
+        {/* Workflow Status */}
+        {(idea.status === 'pending' || idea.status === 'under_review' || idea.status === 'approved' || idea.status === 'rejected') && (
+          <div className="border-t border-gray-200 p-6">
+            <WorkflowStatus ideaId={idea.id} />
+          </div>
+        )}
 
         {/* Comments section */}
         <div className="border-t border-gray-200 p-6">
