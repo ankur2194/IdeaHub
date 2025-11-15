@@ -274,7 +274,7 @@ class IdeaController extends Controller
     /**
      * Submit an idea for approval.
      */
-    public function submit(Idea $idea, PointsService $pointsService, NotificationService $notificationService, \App\Services\ApprovalWorkflowService $workflowService)
+    public function submit(Idea $idea, PointsService $pointsService, NotificationService $notificationService, \App\Services\ApprovalWorkflowService $workflowService, \App\Services\GamificationService $gamificationService)
     {
         if ($idea->user_id !== Auth::id()) {
             return response()->json([
@@ -298,6 +298,9 @@ class IdeaController extends Controller
         // Award points for idea submission
         $pointsService->awardIdeaSubmitted($idea->user);
 
+        // Track gamification (XP, badges, levels)
+        $gamificationService->trackIdeaSubmitted($idea->user);
+
         // Initialize approval workflow
         $idea->load('user', 'category');
         $approvals = $workflowService->initializeWorkflow($idea);
@@ -310,7 +313,7 @@ class IdeaController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Idea submitted for approval (+10 points). {$approvals->count()} approver(s) notified.",
+            'message' => "Idea submitted for approval (+10 points, +20 XP). {$approvals->count()} approver(s) notified.",
             'data' => [
                 'idea' => $idea,
                 'approvals_created' => $approvals->count(),
@@ -322,7 +325,7 @@ class IdeaController extends Controller
     /**
      * Like or unlike an idea.
      */
-    public function like(Idea $idea, PointsService $pointsService)
+    public function like(Idea $idea, PointsService $pointsService, \App\Services\GamificationService $gamificationService)
     {
         $user = Auth::user();
 
@@ -347,10 +350,14 @@ class IdeaController extends Controller
             // Award points to idea author
             if ($idea->user) {
                 $pointsService->awardLikeReceived($idea->user);
+                $gamificationService->trackLikeReceived($idea->user);
             }
 
+            // Track like given by current user
+            $gamificationService->trackLikeGiven($user);
+
             $liked = true;
-            $message = 'Idea liked';
+            $message = 'Idea liked (+2 XP)';
         }
 
         return response()->json([

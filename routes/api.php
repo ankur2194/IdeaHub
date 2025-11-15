@@ -3,8 +3,10 @@
 use App\Http\Controllers\Api\AnalyticsController;
 use App\Http\Controllers\Api\ApprovalController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\BadgeController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CommentController;
+use App\Http\Controllers\Api\GamificationController;
 use App\Http\Controllers\Api\IdeaController;
 use App\Http\Controllers\Api\TagController;
 use Illuminate\Support\Facades\Route;
@@ -61,4 +63,19 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/analytics/department-stats', [AnalyticsController::class, 'departmentStats']);
     Route::get('/analytics/recent-activity', [AnalyticsController::class, 'recentActivity']);
     Route::get('/analytics/user-stats', [AnalyticsController::class, 'userStats']);
+
+    // Badges
+    Route::get('/badges', [BadgeController::class, 'index']);
+    Route::get('/badges/{badge}', [BadgeController::class, 'show']);
+    Route::get('/badges/user/{user}', [BadgeController::class, 'userBadges']);
+    Route::get('/my/badges', [BadgeController::class, 'myBadges']);
+    Route::get('/my/badge-progress', [BadgeController::class, 'progress']);
+
+    // Gamification
+    Route::get('/gamification/my-stats', [GamificationController::class, 'myStats']);
+    Route::get('/gamification/user/{user}', [GamificationController::class, 'userStats']);
+    Route::get('/gamification/leaderboard', [GamificationController::class, 'leaderboard']);
+    Route::get('/gamification/level-rankings', [GamificationController::class, 'levelRankings']);
+    Route::get('/gamification/recent-achievements', [GamificationController::class, 'recentAchievements']);
+    Route::get('/gamification/xp-breakdown', [GamificationController::class, 'xpBreakdown']);
 });

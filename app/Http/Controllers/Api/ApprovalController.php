@@ -87,7 +87,7 @@ class ApprovalController extends Controller
     /**
      * Approve an idea.
      */
-    public function approve(Request $request, Approval $approval, ApprovalWorkflowService $workflowService, NotificationService $notificationService, PointsService $pointsService)
+    public function approve(Request $request, Approval $approval, ApprovalWorkflowService $workflowService, NotificationService $notificationService, PointsService $pointsService, \App\Services\GamificationService $gamificationService)
     {
         // Check authorization
         if ($approval->approver_id !== Auth::id()) {
@@ -122,7 +122,8 @@ class ApprovalController extends Controller
             // Idea is fully approved
             $notificationService->notifyIdeaApproved($idea);
             $pointsService->awardIdeaApproved($idea->user);
-            $message = 'Idea fully approved! (+50 points for author)';
+            $gamificationService->trackIdeaApproved($idea->user);
+            $message = 'Idea fully approved! (+50 points, +100 XP for author)';
         } elseif ($result['next_level']) {
             // Move to next approval level
             if (!empty($result['pending_approvals'])) {

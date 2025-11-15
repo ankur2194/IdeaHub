@@ -48,7 +48,7 @@ class CommentController extends Controller
     /**
      * Store a newly created comment.
      */
-    public function store(Request $request, PointsService $pointsService, NotificationService $notificationService)
+    public function store(Request $request, PointsService $pointsService, NotificationService $notificationService, \App\Services\GamificationService $gamificationService)
     {
         $validated = $request->validate([
             'idea_id' => 'required|exists:ideas,id',
@@ -69,6 +69,9 @@ class CommentController extends Controller
         // Award points for comment creation
         $pointsService->awardCommentCreated(Auth::user());
 
+        // Track gamification (XP, badges, levels)
+        $gamificationService->trackCommentCreated(Auth::user());
+
         // Load relationships for notifications
         $comment->load('user', 'idea.user', 'parent.user');
 
@@ -83,7 +86,7 @@ class CommentController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Comment added successfully (+5 points)',
+            'message' => 'Comment added successfully (+5 points, +10 XP)',
             'data' => $comment,
         ], 201);
     }
