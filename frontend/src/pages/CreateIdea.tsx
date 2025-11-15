@@ -4,6 +4,7 @@ import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { createIdea } from '../store/ideasSlice';
 import { fetchCategories } from '../store/categoriesSlice';
 import { fetchTags } from '../store/tagsSlice';
+import { FileUpload } from '../components/FileUpload';
 
 const CreateIdea = () => {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ const CreateIdea = () => {
     is_anonymous: false,
     tags: [] as number[],
   });
+  const [files, setFiles] = useState<File[]>([]);
 
   useEffect(() => {
     dispatch(fetchCategories());
@@ -47,11 +49,21 @@ const CreateIdea = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const ideaData = {
-        ...formData,
-        category_id: formData.category_id ? parseInt(formData.category_id) : undefined,
-      };
-      await dispatch(createIdea(ideaData)).unwrap();
+      const submitData = new FormData();
+      submitData.append('title', formData.title);
+      submitData.append('description', formData.description);
+      if (formData.category_id) {
+        submitData.append('category_id', formData.category_id);
+      }
+      submitData.append('is_anonymous', formData.is_anonymous.toString());
+      formData.tags.forEach((tagId) => {
+        submitData.append('tags[]', tagId.toString());
+      });
+      files.forEach((file) => {
+        submitData.append('attachments[]', file);
+      });
+
+      await dispatch(createIdea(submitData as any)).unwrap();
       navigate('/ideas');
     } catch (err) {
       // Error is handled by Redux slice
@@ -145,6 +157,13 @@ const CreateIdea = () => {
               </button>
             ))}
           </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Attachments (Optional)
+          </label>
+          <FileUpload files={files} onChange={setFiles} />
         </div>
 
         <div className="flex items-center">

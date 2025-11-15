@@ -39,6 +39,14 @@ export interface Tag {
   updated_at: string;
 }
 
+// Attachment types
+export interface Attachment {
+  name: string;
+  path: string;
+  size: number;
+  type: string;
+}
+
 // Idea types
 export type IdeaStatus = 'draft' | 'submitted' | 'under_review' | 'approved' | 'rejected' | 'implemented' | 'archived';
 
@@ -53,7 +61,7 @@ export interface Idea {
   likes_count: number;
   comments_count: number;
   views_count: number;
-  attachments: string[] | null;
+  attachments: Attachment[] | null;
   submitted_at: string | null;
   approved_at: string | null;
   rejected_at: string | null;
@@ -61,6 +69,7 @@ export interface Idea {
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
+  liked?: boolean;
 
   // Relations
   user?: User;
@@ -82,6 +91,7 @@ export interface Comment {
   is_edited: boolean;
   created_at: string;
   updated_at: string;
+  liked?: boolean;
 
   // Relations
   user?: User;
