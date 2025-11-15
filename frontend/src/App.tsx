@@ -11,6 +11,7 @@ import MyIdeas from './pages/MyIdeas';
 import IdeaDetail from './pages/IdeaDetail';
 import CreateIdea from './pages/CreateIdea';
 import Analytics from './pages/Analytics';
+import Profile from './pages/Profile';
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="analytics" element={<Analytics />} />
+            <Route path="profile" element={<Profile />} />
             <Route path="ideas" element={<Ideas />} />
             <Route path="ideas/my" element={<MyIdeas />} />
             <Route path="ideas/create" element={<CreateIdea />} />
