@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Idea;
+use App\Services\NotificationService;
 use App\Services\PointsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -245,7 +246,7 @@ class IdeaController extends Controller
     /**
      * Submit an idea for approval.
      */
-    public function submit(Idea $idea, PointsService $pointsService)
+    public function submit(Idea $idea, PointsService $pointsService, NotificationService $notificationService)
     {
         if ($idea->user_id !== Auth::id()) {
             return response()->json([
@@ -268,6 +269,10 @@ class IdeaController extends Controller
 
         // Award points for idea submission
         $pointsService->awardIdeaSubmitted($idea->user);
+
+        // Notify approvers
+        $idea->load('user', 'category');
+        $notificationService->notifyIdeaSubmitted($idea);
 
         return response()->json([
             'success' => true,

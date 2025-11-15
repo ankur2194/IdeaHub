@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Comment;
 use App\Models\Idea;
+use App\Services\NotificationService;
 use App\Services\PointsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -47,7 +48,7 @@ class CommentController extends Controller
     /**
      * Store a newly created comment.
      */
-    public function store(Request $request, PointsService $pointsService)
+    public function store(Request $request, PointsService $pointsService, NotificationService $notificationService)
     {
         $validated = $request->validate([
             'idea_id' => 'required|exists:ideas,id',
@@ -68,7 +69,17 @@ class CommentController extends Controller
         // Award points for comment creation
         $pointsService->awardCommentCreated(Auth::user());
 
-        $comment->load('user');
+        // Load relationships for notifications
+        $comment->load('user', 'idea.user', 'parent.user');
+
+        // Send notifications
+        if ($comment->parent_id) {
+            // This is a reply - notify the parent comment author
+            $notificationService->notifyCommentReply($comment);
+        } else {
+            // This is a top-level comment - notify the idea author
+            $notificationService->notifyCommentPosted($comment);
+        }
 
         return response()->json([
             'success' => true,
