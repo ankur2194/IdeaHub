@@ -274,7 +274,7 @@ class IdeaController extends Controller
     /**
      * Submit an idea for approval.
      */
-    public function submit(Idea $idea, PointsService $pointsService, NotificationService $notificationService)
+    public function submit(Idea $idea, PointsService $pointsService, NotificationService $notificationService, \App\Services\ApprovalWorkflowService $workflowService)
     {
         if ($idea->user_id !== Auth::id()) {
             return response()->json([
@@ -298,14 +298,24 @@ class IdeaController extends Controller
         // Award points for idea submission
         $pointsService->awardIdeaSubmitted($idea->user);
 
-        // Notify approvers
+        // Initialize approval workflow
         $idea->load('user', 'category');
-        $notificationService->notifyIdeaSubmitted($idea);
+        $approvals = $workflowService->initializeWorkflow($idea);
+
+        // Notify first-level approvers
+        $firstLevelApprovals = $approvals->where('level', 1);
+        foreach ($firstLevelApprovals as $approval) {
+            $notificationService->notifyApprovalRequest($approval);
+        }
 
         return response()->json([
             'success' => true,
-            'message' => 'Idea submitted for approval (+10 points)',
-            'data' => $idea,
+            'message' => "Idea submitted for approval (+10 points). {$approvals->count()} approver(s) notified.",
+            'data' => [
+                'idea' => $idea,
+                'approvals_created' => $approvals->count(),
+                'first_level_approvers' => $firstLevelApprovals->count(),
+            ],
         ]);
     }
 

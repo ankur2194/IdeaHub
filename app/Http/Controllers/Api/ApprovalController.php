@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Approval;
 use App\Models\Idea;
+use App\Services\ApprovalWorkflowService;
+use App\Services\NotificationService;
+use App\Services\PointsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -84,7 +87,7 @@ class ApprovalController extends Controller
     /**
      * Approve an idea.
      */
-    public function approve(Request $request, Approval $approval)
+    public function approve(Request $request, Approval $approval, ApprovalWorkflowService $workflowService, NotificationService $notificationService, PointsService $pointsService)
     {
         // Check authorization
         if ($approval->approver_id !== Auth::id()) {
@@ -105,30 +108,50 @@ class ApprovalController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        $approval->update([
-            'status' => 'approved',
-            'notes' => $validated['notes'] ?? null,
-            'approved_at' => now(),
-        ]);
+        // Process approval through workflow service
+        $result = $workflowService->processApproval(
+            $approval,
+            'approved',
+            $validated['notes'] ?? null
+        );
 
-        // Update idea status
-        $idea = $approval->idea;
-        $idea->update([
-            'status' => 'approved',
-            'approved_at' => now(),
-        ]);
+        $idea = $approval->idea->fresh();
+
+        // Send notifications based on workflow result
+        if ($result['final_status'] === 'approved') {
+            // Idea is fully approved
+            $notificationService->notifyIdeaApproved($idea);
+            $pointsService->awardIdeaApproved($idea->user);
+            $message = 'Idea fully approved! (+50 points for author)';
+        } elseif ($result['next_level']) {
+            // Move to next approval level
+            if (!empty($result['pending_approvals'])) {
+                foreach ($result['pending_approvals'] as $nextApproval) {
+                    $notificationService->notifyApprovalRequest($nextApproval);
+                }
+            }
+            $message = "Approval recorded. Moving to level {$result['next_level']}.";
+        } else {
+            $message = 'Approval recorded. Waiting for other approvers at this level.';
+        }
+
+        $approval->load(['idea', 'approver']);
 
         return response()->json([
             'success' => true,
-            'message' => 'Idea approved successfully',
-            'data' => $approval,
+            'message' => $message,
+            'data' => [
+                'approval' => $approval,
+                'workflow_status' => $result,
+                'idea_status' => $idea->status,
+            ],
         ]);
     }
 
     /**
      * Reject an idea.
      */
-    public function reject(Request $request, Approval $approval)
+    public function reject(Request $request, Approval $approval, ApprovalWorkflowService $workflowService, NotificationService $notificationService)
     {
         // Check authorization
         if ($approval->approver_id !== Auth::id()) {
@@ -149,23 +172,28 @@ class ApprovalController extends Controller
             'notes' => 'required|string',
         ]);
 
-        $approval->update([
-            'status' => 'rejected',
-            'notes' => $validated['notes'],
-            'rejected_at' => now(),
-        ]);
+        // Process rejection through workflow service
+        $result = $workflowService->processApproval(
+            $approval,
+            'rejected',
+            $validated['notes']
+        );
 
-        // Update idea status
-        $idea = $approval->idea;
-        $idea->update([
-            'status' => 'rejected',
-            'rejected_at' => now(),
-        ]);
+        $idea = $approval->idea->fresh();
+
+        // Notify idea author of rejection
+        $notificationService->notifyIdeaRejected($idea, $validated['notes']);
+
+        $approval->load(['idea', 'approver']);
 
         return response()->json([
             'success' => true,
             'message' => 'Idea rejected',
-            'data' => $approval,
+            'data' => [
+                'approval' => $approval,
+                'workflow_status' => $result,
+                'idea_status' => $idea->status,
+            ],
         ]);
     }
 
@@ -181,6 +209,19 @@ class ApprovalController extends Controller
         return response()->json([
             'success' => true,
             'data' => ['count' => $count],
+        ]);
+    }
+
+    /**
+     * Get workflow status for an idea.
+     */
+    public function workflowStatus(Idea $idea, ApprovalWorkflowService $workflowService)
+    {
+        $status = $workflowService->getWorkflowStatus($idea);
+
+        return response()->json([
+            'success' => true,
+            'data' => $status,
         ]);
     }
 

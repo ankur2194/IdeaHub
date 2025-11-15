@@ -54,27 +54,32 @@ class NotificationService
     /**
      * Notify idea author when their idea is approved
      */
-    public function notifyIdeaApproved(Idea $idea, User $approver): void
+    public function notifyIdeaApproved(Idea $idea, ?User $approver = null): void
     {
         if (!$idea->user) {
             return;
         }
+
+        $approverName = $approver ? $approver->name : 'the review team';
 
         // Create in-app notification
         $notification = Notification::create([
             'user_id' => $idea->user_id,
             'type' => 'idea_approved',
             'title' => 'Your Idea Was Approved!',
-            'message' => "Congratulations! Your idea \"{$idea->title}\" has been approved by {$approver->name}.",
+            'message' => "Congratulations! Your idea \"{$idea->title}\" has been approved by {$approverName}.",
             'data' => [
                 'idea_id' => $idea->id,
                 'idea_title' => $idea->title,
-                'approver_name' => $approver->name,
+                'approver_name' => $approverName,
             ],
         ]);
 
         // Send email notification
         try {
+            if (!$approver) {
+                $approver = User::where('role', 'admin')->first();
+            }
             Mail::to($idea->user->email)->send(new IdeaApprovedMail($idea, $approver));
             $notification->update(['email_sent' => true]);
         } catch (\Exception $e) {
@@ -88,28 +93,33 @@ class NotificationService
     /**
      * Notify idea author when their idea is rejected
      */
-    public function notifyIdeaRejected(Idea $idea, User $approver, string $reason = ''): void
+    public function notifyIdeaRejected(Idea $idea, ?string $reason = '', ?User $approver = null): void
     {
         if (!$idea->user) {
             return;
         }
+
+        $approverName = $approver ? $approver->name : 'the review team';
 
         // Create in-app notification
         $notification = Notification::create([
             'user_id' => $idea->user_id,
             'type' => 'idea_rejected',
             'title' => 'Idea Review Update',
-            'message' => "Your idea \"{$idea->title}\" was not approved. " . ($reason ? "Reason: {$reason}" : ''),
+            'message' => "Your idea \"{$idea->title}\" was not approved by {$approverName}. " . ($reason ? "Reason: {$reason}" : ''),
             'data' => [
                 'idea_id' => $idea->id,
                 'idea_title' => $idea->title,
-                'approver_name' => $approver->name,
+                'approver_name' => $approverName,
                 'reason' => $reason,
             ],
         ]);
 
         // Send email notification
         try {
+            if (!$approver) {
+                $approver = User::where('role', 'admin')->first();
+            }
             Mail::to($idea->user->email)->send(new IdeaRejectedMail($idea, $approver, $reason));
             $notification->update(['email_sent' => true]);
         } catch (\Exception $e) {
@@ -118,6 +128,34 @@ class NotificationService
                 'error' => $e->getMessage(),
             ]);
         }
+    }
+
+    /**
+     * Notify approver when they have a new approval request
+     */
+    public function notifyApprovalRequest($approval): void
+    {
+        $approver = $approval->approver;
+        $idea = $approval->idea;
+
+        if (!$approver || !$idea) {
+            return;
+        }
+
+        // Create in-app notification
+        Notification::create([
+            'user_id' => $approver->id,
+            'type' => 'approval_request',
+            'title' => 'New Idea Requires Your Approval',
+            'message' => "Idea \"{$idea->title}\" by {$idea->user->name} is awaiting your approval (Level {$approval->level})",
+            'data' => [
+                'idea_id' => $idea->id,
+                'idea_title' => $idea->title,
+                'approval_id' => $approval->id,
+                'approval_level' => $approval->level,
+                'author_name' => $idea->user->name,
+            ],
+        ]);
     }
 
     /**

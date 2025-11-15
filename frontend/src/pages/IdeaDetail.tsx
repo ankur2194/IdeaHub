@@ -10,6 +10,7 @@ import Avatar from '../components/common/Avatar';
 import CommentList from '../components/comments/CommentList';
 import CommentForm from '../components/comments/CommentForm';
 import { AttachmentList } from '../components/AttachmentList';
+import WorkflowStatus from '../components/approvals/WorkflowStatus';
 import { formatDateTime } from '../utils/formatters';
 import { canEditIdea, canDeleteIdea, canSubmitIdea } from '../utils/statusHelpers';
 import {
@@ -261,6 +262,13 @@ const IdeaDetail = () => {
         {idea.attachments && idea.attachments.length > 0 && (
           <div className="border-t border-gray-200 p-6">
             <AttachmentList attachments={idea.attachments} />
+          </div>
+        )}
+
+        {/* Workflow Status */}
+        {(idea.status === 'pending' || idea.status === 'under_review' || idea.status === 'approved' || idea.status === 'rejected') && (
+          <div className="border-t border-gray-200 p-6">
+            <WorkflowStatus ideaId={idea.id} />
           </div>
         )}
 

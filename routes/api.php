@@ -40,6 +40,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/approvals/{approval}/approve', [ApprovalController::class, 'approve']);
     Route::post('/approvals/{approval}/reject', [ApprovalController::class, 'reject']);
     Route::get('/approvals/pending/count', [ApprovalController::class, 'pending']);
+    Route::get('/ideas/{idea}/workflow-status', [ApprovalController::class, 'workflowStatus']);
 
     // Categories (protected operations)
     Route::post('/categories', [CategoryController::class, 'store']);
