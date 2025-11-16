@@ -130,8 +130,8 @@ self.addEventListener('push', (event) => {
   const title = data.title || 'IdeaHub';
   const options = {
     body: data.body || 'You have a new notification',
-    icon: '/pwa-icon-192.png',
-    badge: '/pwa-icon-192.png',
+    icon: '/pwa-icon-192.svg',
+    badge: '/pwa-icon-192.svg',
     data: data.url || '/',
   };
 
