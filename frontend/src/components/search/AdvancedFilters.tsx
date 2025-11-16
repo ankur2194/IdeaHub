@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { fetchTags } from '../../store/tagsSlice';
 import { XMarkIcon } from '@heroicons/react/24/outline';
-import type { Category, Tag } from '../../types';
+import type { Category } from '../../types';
 
 interface AdvancedFiltersProps {
   filters: {

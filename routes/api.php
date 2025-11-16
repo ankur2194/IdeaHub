@@ -4,12 +4,17 @@ use App\Http\Controllers\Api\AnalyticsController;
 use App\Http\Controllers\Api\ApprovalController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BadgeController;
+use App\Http\Controllers\Api\BrandingController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CommentController;
+use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\ExportController;
 use App\Http\Controllers\Api\GamificationController;
 use App\Http\Controllers\Api\IdeaController;
+use App\Http\Controllers\Api\IntegrationController;
+use App\Http\Controllers\Api\SsoController;
 use App\Http\Controllers\Api\TagController;
+use App\Http\Controllers\Api\WidgetController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
@@ -21,6 +26,14 @@ Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{category}', [CategoryController::class, 'show']);
 Route::get('/tags', [TagController::class, 'index']);
 Route::get('/tags/{tag}', [TagController::class, 'show']);
+
+// Branding (public - for displaying tenant branding)
+Route::get('/branding', [BrandingController::class, 'index']);
+
+// SSO (public - for SSO authentication flow)
+Route::get('/sso/providers', [SsoController::class, 'index']);
+Route::get('/sso/{provider}/initiate', [SsoController::class, 'initiate']);
+Route::post('/sso/callback', [SsoController::class, 'callback']);
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
@@ -85,4 +98,33 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/export/analytics/csv', [ExportController::class, 'exportAnalyticsCSV']);
     Route::get('/export/ideas/csv', [ExportController::class, 'exportIdeasCSV']);
     Route::get('/export/users/csv', [ExportController::class, 'exportUsersCSV']);
+
+    // Dashboards
+    Route::apiResource('dashboards', DashboardController::class);
+    Route::post('/dashboards/{dashboard}/set-default', [DashboardController::class, 'setDefault']);
+    Route::post('/dashboards/{dashboard}/share', [DashboardController::class, 'share']);
+    Route::get('/dashboards/{dashboard}/widgets/{widgetId}/data', [DashboardController::class, 'widgetData']);
+    Route::get('/dashboards/shared/all', [DashboardController::class, 'shared']);
+
+    // Widgets
+    Route::apiResource('widgets', WidgetController::class);
+    Route::get('/widgets/{widget}/preview', [WidgetController::class, 'preview']);
+    Route::get('/widgets-metadata', [WidgetController::class, 'metadata']);
+
+    // Branding (admin only for updates)
+    Route::put('/branding', [BrandingController::class, 'update']);
+    Route::post('/branding/upload-logo', [BrandingController::class, 'uploadLogo']);
+    Route::delete('/branding/logo/{type}', [BrandingController::class, 'deleteLogo']);
+    Route::post('/branding/reset', [BrandingController::class, 'reset']);
+
+    // SSO (admin only for configuration)
+    Route::get('/sso/providers/{provider}', [SsoController::class, 'show']);
+    Route::post('/sso/configure', [SsoController::class, 'configure']);
+    Route::delete('/sso/providers/{provider}', [SsoController::class, 'destroy']);
+    Route::post('/sso/providers/{provider}/test', [SsoController::class, 'test']);
+
+    // Integrations
+    Route::apiResource('integrations', IntegrationController::class);
+    Route::post('/integrations/{integration}/test', [IntegrationController::class, 'test']);
+    Route::post('/integrations/{integration}/sync', [IntegrationController::class, 'sync']);
 });

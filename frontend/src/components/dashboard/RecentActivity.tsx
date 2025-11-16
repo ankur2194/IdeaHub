@@ -7,6 +7,7 @@ import {
 import Avatar from '../common/Avatar';
 import StatusBadge from '../common/StatusBadge';
 import type { RecentActivity as RecentActivityType } from '../../services/analyticsService';
+import type { IdeaStatus } from '../../types';
 
 interface RecentActivityProps {
   activities: RecentActivityType[];
@@ -91,7 +92,7 @@ const RecentActivity: React.FC<RecentActivityProps> = ({
 
               {/* Status Badge */}
               <div className="flex-shrink-0">
-                <StatusBadge status={activity.status} />
+                <StatusBadge status={activity.status as IdeaStatus} />
               </div>
             </Link>
           ))}
