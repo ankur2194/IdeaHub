@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Idea;
 use App\Services\NotificationService;
 use App\Services\PointsService;
+use App\Events\IdeaCreated;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -138,6 +139,9 @@ class IdeaController extends Controller
         }
 
         $idea->load(['user', 'category', 'tags']);
+
+        // Broadcast idea created event
+        broadcast(new IdeaCreated($idea));
 
         return response()->json([
             'success' => true,

@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BadgeController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CommentController;
+use App\Http\Controllers\Api\ExportController;
 use App\Http\Controllers\Api\GamificationController;
 use App\Http\Controllers\Api\IdeaController;
 use App\Http\Controllers\Api\TagController;
@@ -78,4 +79,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/gamification/level-rankings', [GamificationController::class, 'levelRankings']);
     Route::get('/gamification/recent-achievements', [GamificationController::class, 'recentAchievements']);
     Route::get('/gamification/xp-breakdown', [GamificationController::class, 'xpBreakdown']);
+
+    // Export
+    Route::get('/export/analytics/pdf', [ExportController::class, 'exportAnalyticsPDF']);
+    Route::get('/export/analytics/csv', [ExportController::class, 'exportAnalyticsCSV']);
+    Route::get('/export/ideas/csv', [ExportController::class, 'exportIdeasCSV']);
+    Route::get('/export/users/csv', [ExportController::class, 'exportUsersCSV']);
 });

@@ -8,6 +8,7 @@ use App\Models\Idea;
 use App\Services\ApprovalWorkflowService;
 use App\Services\NotificationService;
 use App\Services\PointsService;
+use App\Events\IdeaApproved;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -123,6 +124,10 @@ class ApprovalController extends Controller
             $notificationService->notifyIdeaApproved($idea);
             $pointsService->awardIdeaApproved($idea->user);
             $gamificationService->trackIdeaApproved($idea->user);
+
+            // Broadcast idea approved event
+            broadcast(new IdeaApproved($idea));
+
             $message = 'Idea fully approved! (+50 points, +100 XP for author)';
         } elseif ($result['next_level']) {
             // Move to next approval level

@@ -7,6 +7,7 @@ use App\Models\Comment;
 use App\Models\Idea;
 use App\Services\NotificationService;
 use App\Services\PointsService;
+use App\Events\CommentCreated;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -74,6 +75,9 @@ class CommentController extends Controller
 
         // Load relationships for notifications
         $comment->load('user', 'idea.user', 'parent.user');
+
+        // Broadcast comment created event
+        broadcast(new CommentCreated($comment));
 
         // Send notifications
         if ($comment->parent_id) {
