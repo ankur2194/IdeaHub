@@ -97,8 +97,8 @@ export async function showNotification(title: string, options?: NotificationOpti
   if (Notification.permission === 'granted') {
     const registration = await navigator.serviceWorker.ready;
     await registration.showNotification(title, {
-      icon: '/pwa-icon-192.png',
-      badge: '/pwa-icon-192.png',
+      icon: '/pwa-icon-192.svg',
+      badge: '/pwa-icon-192.svg',
       ...options,
     });
   } else {

@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchIdea, likeIdea, deleteIdea, submitIdea } from '../store/ideasSlice';
 import { commentService } from '../services/commentService';
+import { useIdeaUpdates } from '../hooks/useEcho';
 import StatusBadge from '../components/common/StatusBadge';
 import CategoryBadge from '../components/common/CategoryBadge';
 import TagBadge from '../components/common/TagBadge';
@@ -35,6 +36,28 @@ const IdeaDetail = () => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [commentSubmitting, setCommentSubmitting] = useState(false);
+  const [showNewCommentToast, setShowNewCommentToast] = useState(false);
+
+  // Real-time updates for this idea
+  useIdeaUpdates(
+    idea?.id || null,
+    // On new comment created
+    (comment) => {
+      // Only add if it's not from the current user (avoid duplicates)
+      if (comment.user.id !== user?.id) {
+        setComments((prev) => [comment as any, ...prev]);
+        setShowNewCommentToast(true);
+        setTimeout(() => setShowNewCommentToast(false), 3000);
+      }
+    },
+    // On idea approved
+    (data) => {
+      if (idea) {
+        // Refresh the idea to get updated status
+        dispatch(fetchIdea(idea.id));
+      }
+    }
+  );
 
   useEffect(() => {
     if (id) {

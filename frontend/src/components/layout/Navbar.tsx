@@ -2,9 +2,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { logout } from '../../store/authSlice';
 import Avatar from '../common/Avatar';
+import NotificationDropdown from './NotificationDropdown';
 import {
   Bars3Icon,
-  BellIcon,
   PlusIcon,
 } from '@heroicons/react/24/outline';
 
@@ -81,12 +81,7 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
               New Idea
             </Link>
 
-            <button
-              type="button"
-              className="rounded-full bg-white p-1 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            >
-              <BellIcon className="h-6 w-6" />
-            </button>
+            <NotificationDropdown />
 
             <div className="relative">
               <button
