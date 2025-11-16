@@ -5,6 +5,9 @@ namespace App\Services;
 use App\Models\Badge;
 use App\Models\User;
 use App\Models\Notification;
+use App\Events\BadgeEarned;
+use App\Events\UserLeveledUp;
+use App\Events\NewNotification;
 
 class GamificationService
 {
@@ -41,6 +44,11 @@ class GamificationService
         // Update title based on level
         $user->title = $user->rank;
         $user->save();
+
+        // Broadcast level-up event if level changed
+        if ($leveledUp) {
+            broadcast(new UserLeveledUp($user, $oldLevel, $user->level));
+        }
 
         return [
             'xp_awarded' => $xp,
@@ -159,6 +167,9 @@ class GamificationService
 
         $this->awardExperience($user, self::XP_BADGE_EARNED, "Earned badge: {$badge->name}");
 
+        // Broadcast badge earned event
+        broadcast(new BadgeEarned($user, $badge));
+
         // Notify user of new badge
         $this->notifyBadgeEarned($user, $badge);
 
@@ -262,7 +273,7 @@ class GamificationService
      */
     protected function notifyLevelUp(User $user, int $newLevel): void
     {
-        Notification::create([
+        $notification = Notification::create([
             'user_id' => $user->id,
             'type' => 'level_up',
             'title' => '🎉 Level Up!',
@@ -273,6 +284,9 @@ class GamificationService
                 'next_level_xp' => $user->getXpForNextLevel(),
             ],
         ]);
+
+        // Broadcast notification in real-time
+        broadcast(new NewNotification($notification));
     }
 
     /**
@@ -280,7 +294,7 @@ class GamificationService
      */
     protected function notifyBadgeEarned(User $user, Badge $badge): void
     {
-        Notification::create([
+        $notification = Notification::create([
             'user_id' => $user->id,
             'type' => 'badge_earned',
             'title' => '🏆 New Badge Earned!',
@@ -292,6 +306,9 @@ class GamificationService
                 'points_reward' => $badge->points_reward,
             ],
         ]);
+
+        // Broadcast notification in real-time
+        broadcast(new NewNotification($notification));
     }
 
     /**

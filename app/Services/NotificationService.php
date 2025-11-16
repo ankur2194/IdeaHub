@@ -10,6 +10,7 @@ use App\Mail\IdeaSubmittedMail;
 use App\Mail\IdeaApprovedMail;
 use App\Mail\IdeaRejectedMail;
 use App\Mail\CommentPostedMail;
+use App\Events\NewNotification;
 use Illuminate\Support\Facades\Mail;
 
 class NotificationService
@@ -37,6 +38,9 @@ class NotificationService
                     'author_name' => $idea->user->name,
                 ],
             ]);
+
+            // Broadcast notification in real-time
+            broadcast(new NewNotification($notification));
 
             // Send email notification
             try {
@@ -74,6 +78,9 @@ class NotificationService
                 'approver_name' => $approverName,
             ],
         ]);
+
+        // Broadcast notification in real-time
+        broadcast(new NewNotification($notification));
 
         // Send email notification
         try {
@@ -115,6 +122,9 @@ class NotificationService
             ],
         ]);
 
+        // Broadcast notification in real-time
+        broadcast(new NewNotification($notification));
+
         // Send email notification
         try {
             if (!$approver) {
@@ -143,7 +153,7 @@ class NotificationService
         }
 
         // Create in-app notification
-        Notification::create([
+        $notification = Notification::create([
             'user_id' => $approver->id,
             'type' => 'approval_request',
             'title' => 'New Idea Requires Your Approval',
@@ -156,6 +166,9 @@ class NotificationService
                 'author_name' => $idea->user->name,
             ],
         ]);
+
+        // Broadcast notification in real-time
+        broadcast(new NewNotification($notification));
     }
 
     /**
@@ -187,6 +200,9 @@ class NotificationService
                 'commenter_name' => $comment->user->name,
             ],
         ]);
+
+        // Broadcast notification in real-time
+        broadcast(new NewNotification($notification));
 
         // Send email notification
         try {
@@ -232,6 +248,9 @@ class NotificationService
                 'replier_name' => $reply->user->name,
             ],
         ]);
+
+        // Broadcast notification in real-time
+        broadcast(new NewNotification($notification));
 
         // For simplicity, reuse CommentPostedMail
         try {

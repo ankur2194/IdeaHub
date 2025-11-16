@@ -1,0 +1,25 @@
+{
+  "debug": true,
+  "host": "0.0.0.0",
+  "port": 6001,
+  "metrics": {
+    "enabled": false
+  },
+  "app": {
+    "array": {
+      "apps": [
+        {
+          "id": "local",
+          "key": "local",
+          "secret": "local",
+          "maxConnections": -1,
+          "enableClientMessages": true,
+          "enabled": true,
+          "maxBackendEventsPerSecond": -1,
+          "maxClientEventsPerSecond": -1,
+          "maxReadRequestsPerSecond": -1
+        }
+      ]
+    }
+  }
+}
