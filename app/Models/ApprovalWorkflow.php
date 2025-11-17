@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ApprovalWorkflow extends Model
 {
-    use HasFactory;
+    use BelongsToTenant, HasFactory;
 
     /**
      * The attributes that are mass assignable.
@@ -16,6 +17,7 @@ class ApprovalWorkflow extends Model
      * @var array<string>
      */
     protected $fillable = [
+        'tenant_id',
         'name',
         'description',
         'category_id',

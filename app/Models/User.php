@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Models\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -11,7 +12,7 @@ use Laravel\Sanctum\HasApiTokens;
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasApiTokens;
+    use HasFactory, Notifiable, HasApiTokens, BelongsToTenant;
 
     /**
      * The attributes that are mass assignable.
@@ -37,6 +38,7 @@ class User extends Authenticatable
         'likes_given',
         'likes_received',
         'is_active',
+        'tenant_id',
     ];
 
     /**
@@ -103,6 +105,22 @@ class User extends Authenticatable
         return $this->belongsToMany(Badge::class, 'user_badges')
             ->withPivot('earned_at', 'progress')
             ->withTimestamps();
+    }
+
+    /**
+     * Get the dashboards for the user.
+     */
+    public function dashboards()
+    {
+        return $this->hasMany(UserDashboard::class);
+    }
+
+    /**
+     * Get the user's default dashboard.
+     */
+    public function defaultDashboard()
+    {
+        return $this->hasOne(UserDashboard::class)->where('is_default', true);
     }
 
     /**

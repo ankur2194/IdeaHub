@@ -1,0 +1,1114 @@
+"A datetime string with format `Y-m-d H:i:s`, e.g. `2018-05-23 13:43:32`."
+scalar DateTime @scalar(class: "Nuwave\\Lighthouse\\Schema\\Types\\Scalars\\DateTime")
+
+"A date string with format `Y-m-d`, e.g. `2011-05-23`."
+scalar Date @scalar(class: "Nuwave\\Lighthouse\\Schema\\Types\\Scalars\\Date")
+
+# ============================================================================
+# QUERIES
+# ============================================================================
+
+"Indicates what fields are available at the top level of a query operation."
+type Query {
+    # ========== User Queries ==========
+    "Find a single user by ID."
+    user(id: ID @eq): User @find
+
+    "Get the currently authenticated user."
+    me: User @auth
+
+    "List multiple users with pagination and filtering."
+    users(
+        "Search by name."
+        name: String @where(operator: "like")
+        "Filter by role."
+        role: String @eq
+        "Filter by department."
+        department: String @eq
+        "Filter by active status."
+        is_active: Boolean @eq
+        "Order by field."
+        orderBy: [OrderByClause!] @orderBy
+    ): [User!]! @paginate(defaultCount: 15) @guard
+
+    "Get user leaderboard."
+    leaderboard(
+        "Number of top users to retrieve."
+        limit: Int = 10
+    ): [User!]! @field(resolver: "App\\GraphQL\\Queries\\UserResolver@leaderboard") @guard
+
+    # ========== Idea Queries ==========
+    "Find a single idea by ID."
+    idea(id: ID! @eq): Idea @find @guard
+
+    "List multiple ideas with advanced filtering and pagination."
+    ideas(
+        "Search in title."
+        title: String @where(operator: "like")
+        "Filter by status."
+        status: String @eq
+        "Filter by category."
+        category_id: ID @eq
+        "Filter by user."
+        user_id: ID @eq
+        "Only include ideas submitted after this date."
+        submitted_after: DateTime @where(operator: ">=", key: "submitted_at")
+        "Only include ideas submitted before this date."
+        submitted_before: DateTime @where(operator: "<=", key: "submitted_at")
+        "Order by field."
+        orderBy: [OrderByClause!] @orderBy
+    ): [Idea!]! @paginate(defaultCount: 15) @guard
+
+    "Get trending ideas based on recent activity."
+    trendingIdeas(
+        "Number of days to look back."
+        days: Int = 7
+        "Number of ideas to retrieve."
+        limit: Int = 10
+    ): [Idea!]! @field(resolver: "App\\GraphQL\\Queries\\IdeaResolver@trending") @guard
+
+    "Get ideas by the authenticated user."
+    myIdeas(
+        "Filter by status."
+        status: String @eq
+        "Order by field."
+        orderBy: [OrderByClause!] @orderBy
+    ): [Idea!]! @paginate(defaultCount: 15) @guard
+
+    # ========== Category Queries ==========
+    "Find a single category by ID."
+    category(id: ID @eq): Category @find @guard
+
+    "List all categories."
+    categories(
+        "Filter by active status."
+        is_active: Boolean @eq
+        "Order by field."
+        orderBy: [OrderByClause!] @orderBy
+    ): [Category!]! @all @guard
+
+    # ========== Tag Queries ==========
+    "Find a single tag by ID."
+    tag(id: ID @eq): Tag @find @guard
+
+    "List all tags."
+    tags(
+        "Search by name."
+        name: String @where(operator: "like")
+        "Limit results."
+        first: Int = 50
+    ): [Tag!]! @all @guard
+
+    "Get popular tags."
+    popularTags(limit: Int = 20): [Tag!]!
+        @field(resolver: "App\\GraphQL\\Queries\\TagResolver@popular") @guard
+
+    # ========== Comment Queries ==========
+    "Find a single comment by ID."
+    comment(id: ID @eq): Comment @find @guard
+
+    "List comments for an idea."
+    comments(
+        "Filter by idea."
+        idea_id: ID! @eq
+        "Order by field."
+        orderBy: [OrderByClause!] @orderBy
+    ): [Comment!]! @paginate(defaultCount: 20) @guard
+
+    # ========== Badge Queries ==========
+    "Find a single badge by ID."
+    badge(id: ID @eq): Badge @find @guard
+
+    "List all badges."
+    badges(
+        "Filter by type."
+        type: String @eq
+        "Filter by category."
+        category: String @eq
+        "Filter by rarity."
+        rarity: String @eq
+        "Filter by active status."
+        is_active: Boolean @eq
+        "Order by field."
+        orderBy: [OrderByClause!] @orderBy
+    ): [Badge!]! @all @guard
+
+    # ========== Approval Queries ==========
+    "Find a single approval by ID."
+    approval(id: ID @eq): Approval @find @guard
+
+    "List approvals for the authenticated user."
+    myApprovals(
+        "Filter by status."
+        status: String @eq
+        "Order by field."
+        orderBy: [OrderByClause!] @orderBy
+    ): [Approval!]! @paginate(defaultCount: 15) @guard
+
+    # ========== Notification Queries ==========
+    "List notifications for the authenticated user."
+    myNotifications(
+        "Filter by read status."
+        is_read: Boolean @eq
+        "Order by field."
+        orderBy: [OrderByClause!] @orderBy
+    ): [Notification!]! @paginate(defaultCount: 20) @guard
+
+    "Count unread notifications for the authenticated user."
+    unreadNotificationsCount: Int!
+        @field(resolver: "App\\GraphQL\\Queries\\NotificationResolver@unreadCount") @guard
+
+    # ========== Analytics Queries ==========
+    "Get dashboard analytics."
+    analytics(
+        "Start date for analytics."
+        start_date: Date
+        "End date for analytics."
+        end_date: Date
+    ): Analytics! @field(resolver: "App\\GraphQL\\Queries\\AnalyticsResolver@dashboard") @guard
+
+    "Get idea statistics."
+    ideaStats: IdeaStats!
+        @field(resolver: "App\\GraphQL\\Queries\\AnalyticsResolver@ideaStats") @guard
+
+    "Get user engagement statistics."
+    userEngagementStats(
+        "Start date for analytics."
+        start_date: Date
+        "End date for analytics."
+        end_date: Date
+    ): UserEngagementStats!
+        @field(resolver: "App\\GraphQL\\Queries\\AnalyticsResolver@userEngagement") @guard
+}
+
+# ============================================================================
+# MUTATIONS
+# ============================================================================
+
+type Mutation {
+    # ========== Authentication Mutations ==========
+    "Login a user and return an API token."
+    login(input: LoginInput! @spread): AuthPayload!
+        @field(resolver: "App\\GraphQL\\Mutations\\AuthResolver@login")
+
+    "Logout the authenticated user."
+    logout: LogoutPayload!
+        @field(resolver: "App\\GraphQL\\Mutations\\AuthResolver@logout") @guard
+
+    "Register a new user."
+    register(input: RegisterInput! @spread): AuthPayload!
+        @field(resolver: "App\\GraphQL\\Mutations\\AuthResolver@register")
+
+    # ========== Idea Mutations ==========
+    "Create a new idea."
+    createIdea(input: CreateIdeaInput! @spread): Idea!
+        @field(resolver: "App\\GraphQL\\Mutations\\IdeaResolver@create") @guard
+
+    "Update an existing idea."
+    updateIdea(id: ID!, input: UpdateIdeaInput! @spread): Idea!
+        @field(resolver: "App\\GraphQL\\Mutations\\IdeaResolver@update") @guard
+
+    "Delete an idea."
+    deleteIdea(id: ID!): DeletePayload!
+        @field(resolver: "App\\GraphQL\\Mutations\\IdeaResolver@delete") @guard
+
+    "Like an idea."
+    likeIdea(idea_id: ID!): Idea!
+        @field(resolver: "App\\GraphQL\\Mutations\\IdeaResolver@like") @guard
+
+    "Unlike an idea."
+    unlikeIdea(idea_id: ID!): Idea!
+        @field(resolver: "App\\GraphQL\\Mutations\\IdeaResolver@unlike") @guard
+
+    "Submit an idea for approval."
+    submitIdea(id: ID!): Idea!
+        @field(resolver: "App\\GraphQL\\Mutations\\IdeaResolver@submit") @guard
+
+    # ========== Comment Mutations ==========
+    "Create a new comment."
+    createComment(input: CreateCommentInput! @spread): Comment!
+        @field(resolver: "App\\GraphQL\\Mutations\\CommentResolver@create") @guard
+
+    "Update an existing comment."
+    updateComment(id: ID!, content: String!): Comment!
+        @field(resolver: "App\\GraphQL\\Mutations\\CommentResolver@update") @guard
+
+    "Delete a comment."
+    deleteComment(id: ID!): DeletePayload!
+        @field(resolver: "App\\GraphQL\\Mutations\\CommentResolver@delete") @guard
+
+    "Like a comment."
+    likeComment(comment_id: ID!): Comment!
+        @field(resolver: "App\\GraphQL\\Mutations\\CommentResolver@like") @guard
+
+    "Unlike a comment."
+    unlikeComment(comment_id: ID!): Comment!
+        @field(resolver: "App\\GraphQL\\Mutations\\CommentResolver@unlike") @guard
+
+    # ========== Approval Mutations ==========
+    "Approve an idea."
+    approveIdea(id: ID!, notes: String): Approval!
+        @field(resolver: "App\\GraphQL\\Mutations\\ApprovalResolver@approve") @guard
+
+    "Reject an idea."
+    rejectIdea(id: ID!, notes: String!): Approval!
+        @field(resolver: "App\\GraphQL\\Mutations\\ApprovalResolver@reject") @guard
+
+    # ========== Category Mutations ==========
+    "Create a new category."
+    createCategory(input: CreateCategoryInput! @spread): Category!
+        @create @guard
+
+    "Update an existing category."
+    updateCategory(id: ID!, input: UpdateCategoryInput! @spread): Category!
+        @update @guard
+
+    "Delete a category."
+    deleteCategory(id: ID!): Category! @delete @guard
+
+    # ========== Tag Mutations ==========
+    "Create a new tag."
+    createTag(input: CreateTagInput! @spread): Tag!
+        @create @guard
+
+    "Update an existing tag."
+    updateTag(id: ID!, input: UpdateTagInput! @spread): Tag!
+        @update @guard
+
+    "Delete a tag."
+    deleteTag(id: ID!): Tag! @delete @guard
+
+    # ========== Notification Mutations ==========
+    "Mark a notification as read."
+    markNotificationRead(id: ID!): Notification!
+        @field(resolver: "App\\GraphQL\\Mutations\\NotificationResolver@markRead") @guard
+
+    "Mark all notifications as read."
+    markAllNotificationsRead: MarkAllReadPayload!
+        @field(resolver: "App\\GraphQL\\Mutations\\NotificationResolver@markAllRead") @guard
+
+    "Delete a notification."
+    deleteNotification(id: ID!): Notification! @delete @guard
+
+    # ========== User Mutations ==========
+    "Update user profile."
+    updateProfile(input: UpdateProfileInput! @spread): User!
+        @field(resolver: "App\\GraphQL\\Mutations\\UserResolver@updateProfile") @guard
+}
+
+# ============================================================================
+# TYPES
+# ============================================================================
+
+"Account of a person who uses this application."
+type User {
+    "Unique primary key."
+    id: ID!
+
+    "Full name."
+    name: String!
+
+    "Unique email address."
+    email: String!
+
+    "User role (admin, department_head, team_lead, employee)."
+    role: String!
+
+    "Profile avatar URL."
+    avatar: String
+
+    "Department name."
+    department: String
+
+    "Job title."
+    job_title: String
+
+    "Gamification points."
+    points: Int!
+
+    "User level."
+    level: Int!
+
+    "Experience points."
+    experience: Int!
+
+    "User title/rank."
+    title: String
+
+    "Total badges earned."
+    total_badges: Int!
+
+    "Number of ideas submitted."
+    ideas_submitted: Int!
+
+    "Number of ideas approved."
+    ideas_approved: Int!
+
+    "Number of comments posted."
+    comments_posted: Int!
+
+    "Number of likes given."
+    likes_given: Int!
+
+    "Number of likes received."
+    likes_received: Int!
+
+    "Whether the user is active."
+    is_active: Boolean!
+
+    "Tenant ID (for multi-tenancy)."
+    tenant_id: ID
+
+    "User's current rank based on level."
+    rank: String!
+
+    "Progress toward next level (0-100)."
+    level_progress: Int!
+
+    "When the email was verified."
+    email_verified_at: DateTime
+
+    "When the account was created."
+    created_at: DateTime!
+
+    "When the account was last updated."
+    updated_at: DateTime!
+
+    "Ideas created by the user."
+    ideas: [Idea!]! @hasMany
+
+    "Comments posted by the user."
+    comments: [Comment!]! @hasMany
+
+    "Badges earned by the user."
+    badges: [Badge!]! @belongsToMany
+
+    "Approvals assigned to the user."
+    approvals: [Approval!]! @hasMany(relation: "approvals")
+
+    "Notifications for the user."
+    notifications: [Notification!]! @hasMany
+}
+
+"An innovation idea submitted by a user."
+type Idea {
+    "Unique primary key."
+    id: ID!
+
+    "Idea title."
+    title: String!
+
+    "Detailed description."
+    description: String!
+
+    "ID of the user who created the idea."
+    user_id: ID!
+
+    "Category ID."
+    category_id: ID
+
+    "Status (draft, pending, approved, rejected, implemented)."
+    status: String!
+
+    "Whether the submission is anonymous."
+    is_anonymous: Boolean!
+
+    "Number of likes."
+    likes_count: Int!
+
+    "Number of comments."
+    comments_count: Int!
+
+    "Number of views."
+    views_count: Int!
+
+    "Attached files (JSON array)."
+    attachments: String
+
+    "When the idea was submitted."
+    submitted_at: DateTime
+
+    "When the idea was approved."
+    approved_at: DateTime
+
+    "When the idea was rejected."
+    rejected_at: DateTime
+
+    "When the idea was implemented."
+    implemented_at: DateTime
+
+    "Tenant ID."
+    tenant_id: ID
+
+    "When the idea was created."
+    created_at: DateTime!
+
+    "When the idea was last updated."
+    updated_at: DateTime!
+
+    "When the idea was soft deleted."
+    deleted_at: DateTime
+
+    "User who created the idea."
+    user: User! @belongsTo
+
+    "Category of the idea."
+    category: Category @belongsTo
+
+    "Comments on the idea."
+    comments: [Comment!]! @hasMany
+
+    "Tags associated with the idea."
+    tags: [Tag!]! @belongsToMany
+
+    "Approvals for the idea."
+    approvals: [Approval!]! @hasMany
+
+    "Users who liked this idea."
+    likedBy: [User!]! @belongsToMany(relation: "likedBy")
+
+    "Whether the current user has liked this idea."
+    isLikedByMe: Boolean! @field(resolver: "App\\GraphQL\\Queries\\IdeaResolver@isLikedByMe")
+}
+
+"A category for organizing ideas."
+type Category {
+    "Unique primary key."
+    id: ID!
+
+    "Category name."
+    name: String!
+
+    "URL-friendly slug."
+    slug: String!
+
+    "Category description."
+    description: String
+
+    "Color code for UI display."
+    color: String
+
+    "Icon identifier."
+    icon: String
+
+    "Whether the category is active."
+    is_active: Boolean!
+
+    "Tenant ID."
+    tenant_id: ID
+
+    "When the category was created."
+    created_at: DateTime!
+
+    "When the category was last updated."
+    updated_at: DateTime!
+
+    "Ideas in this category."
+    ideas: [Idea!]! @hasMany
+
+    "Count of ideas in this category."
+    ideas_count: Int! @count(relation: "ideas")
+}
+
+"A tag for labeling ideas."
+type Tag {
+    "Unique primary key."
+    id: ID!
+
+    "Tag name."
+    name: String!
+
+    "URL-friendly slug."
+    slug: String!
+
+    "Color code for UI display."
+    color: String
+
+    "Number of times this tag has been used."
+    usage_count: Int!
+
+    "Tenant ID."
+    tenant_id: ID
+
+    "When the tag was created."
+    created_at: DateTime!
+
+    "When the tag was last updated."
+    updated_at: DateTime!
+
+    "Ideas tagged with this tag."
+    ideas: [Idea!]! @belongsToMany
+}
+
+"A comment on an idea."
+type Comment {
+    "Unique primary key."
+    id: ID!
+
+    "ID of the idea being commented on."
+    idea_id: ID!
+
+    "ID of the user who posted the comment."
+    user_id: ID!
+
+    "Parent comment ID (for threaded comments)."
+    parent_id: ID
+
+    "Comment content."
+    content: String!
+
+    "Number of likes."
+    likes_count: Int!
+
+    "Whether the comment has been edited."
+    is_edited: Boolean!
+
+    "When the comment was last edited."
+    edited_at: DateTime
+
+    "Tenant ID."
+    tenant_id: ID
+
+    "When the comment was created."
+    created_at: DateTime!
+
+    "When the comment was last updated."
+    updated_at: DateTime!
+
+    "When the comment was soft deleted."
+    deleted_at: DateTime
+
+    "Idea this comment belongs to."
+    idea: Idea! @belongsTo
+
+    "User who posted the comment."
+    user: User! @belongsTo
+
+    "Parent comment (if this is a reply)."
+    parent: Comment @belongsTo
+
+    "Replies to this comment."
+    replies: [Comment!]! @hasMany
+
+    "Users who liked this comment."
+    likedBy: [User!]! @belongsToMany(relation: "likedBy")
+
+    "Whether the current user has liked this comment."
+    isLikedByMe: Boolean! @field(resolver: "App\\GraphQL\\Queries\\CommentResolver@isLikedByMe")
+}
+
+"A badge that can be earned by users."
+type Badge {
+    "Unique primary key."
+    id: ID!
+
+    "Badge name."
+    name: String!
+
+    "URL-friendly slug."
+    slug: String!
+
+    "Badge description."
+    description: String!
+
+    "Icon identifier or URL."
+    icon: String
+
+    "Badge type (achievement, milestone, special)."
+    type: String!
+
+    "Badge category (ideas, engagement, quality, community)."
+    category: String!
+
+    "Criteria for earning (JSON)."
+    criteria: String!
+
+    "Points rewarded when earned."
+    points_reward: Int!
+
+    "Rarity level (common, uncommon, rare, epic, legendary)."
+    rarity: String!
+
+    "Display order."
+    order: Int!
+
+    "Whether the badge is active."
+    is_active: Boolean!
+
+    "Tenant ID."
+    tenant_id: ID
+
+    "When the badge was created."
+    created_at: DateTime!
+
+    "When the badge was last updated."
+    updated_at: DateTime!
+
+    "Users who have earned this badge."
+    users: [User!]! @belongsToMany
+}
+
+"An approval record for an idea."
+type Approval {
+    "Unique primary key."
+    id: ID!
+
+    "ID of the idea being approved."
+    idea_id: ID!
+
+    "ID of the approver."
+    approver_id: ID!
+
+    "Approval status (pending, approved, rejected)."
+    status: String!
+
+    "Approver's notes."
+    notes: String
+
+    "Approval level in workflow."
+    level: Int!
+
+    "When the approval was granted."
+    approved_at: DateTime
+
+    "When the approval was rejected."
+    rejected_at: DateTime
+
+    "Tenant ID."
+    tenant_id: ID
+
+    "When the approval was created."
+    created_at: DateTime!
+
+    "When the approval was last updated."
+    updated_at: DateTime!
+
+    "Idea being approved."
+    idea: Idea! @belongsTo
+
+    "User who is the approver."
+    approver: User! @belongsTo(relation: "approver")
+}
+
+"A notification for a user."
+type Notification {
+    "Unique primary key."
+    id: ID!
+
+    "ID of the user receiving the notification."
+    user_id: ID!
+
+    "Notification type."
+    type: String!
+
+    "Notification title."
+    title: String!
+
+    "Notification message."
+    message: String!
+
+    "Related data (JSON)."
+    data: String
+
+    "Whether the notification has been read."
+    is_read: Boolean!
+
+    "When the notification was read."
+    read_at: DateTime
+
+    "Tenant ID."
+    tenant_id: ID
+
+    "When the notification was created."
+    created_at: DateTime!
+
+    "When the notification was last updated."
+    updated_at: DateTime!
+
+    "User who receives the notification."
+    user: User! @belongsTo
+}
+
+"Dashboard analytics data."
+type Analytics {
+    "Total number of ideas."
+    total_ideas: Int!
+
+    "Total number of users."
+    total_users: Int!
+
+    "Total number of comments."
+    total_comments: Int!
+
+    "Number of pending ideas."
+    pending_ideas: Int!
+
+    "Number of approved ideas."
+    approved_ideas: Int!
+
+    "Number of implemented ideas."
+    implemented_ideas: Int!
+
+    "Ideas created in the time period."
+    ideas_created: Int!
+
+    "Active users in the time period."
+    active_users: Int!
+
+    "Engagement rate percentage."
+    engagement_rate: Float!
+
+    "Ideas by category."
+    ideas_by_category: [CategoryStat!]!
+
+    "Ideas by status."
+    ideas_by_status: [StatusStat!]!
+
+    "Recent activity timeline."
+    recent_activity: [Activity!]!
+}
+
+"Statistics for a category."
+type CategoryStat {
+    "Category name."
+    category: String!
+
+    "Number of ideas in category."
+    count: Int!
+
+    "Percentage of total ideas."
+    percentage: Float!
+}
+
+"Statistics for a status."
+type StatusStat {
+    "Status name."
+    status: String!
+
+    "Number of ideas with this status."
+    count: Int!
+
+    "Percentage of total ideas."
+    percentage: Float!
+}
+
+"An activity record."
+type Activity {
+    "Activity type."
+    type: String!
+
+    "Activity description."
+    description: String!
+
+    "User who performed the activity."
+    user: User
+
+    "Related idea."
+    idea: Idea
+
+    "When the activity occurred."
+    timestamp: DateTime!
+}
+
+"Statistics about ideas."
+type IdeaStats {
+    "Total number of ideas."
+    total: Int!
+
+    "Number of draft ideas."
+    drafts: Int!
+
+    "Number of pending ideas."
+    pending: Int!
+
+    "Number of approved ideas."
+    approved: Int!
+
+    "Number of rejected ideas."
+    rejected: Int!
+
+    "Number of implemented ideas."
+    implemented: Int!
+
+    "Average time to approval (in days)."
+    avg_approval_time: Float
+
+    "Implementation rate percentage."
+    implementation_rate: Float!
+}
+
+"User engagement statistics."
+type UserEngagementStats {
+    "Total number of active users."
+    active_users: Int!
+
+    "Total ideas submitted."
+    ideas_submitted: Int!
+
+    "Total comments posted."
+    comments_posted: Int!
+
+    "Total likes given."
+    likes_given: Int!
+
+    "Average ideas per user."
+    avg_ideas_per_user: Float!
+
+    "Average comments per idea."
+    avg_comments_per_idea: Float!
+
+    "User engagement by department."
+    by_department: [DepartmentStat!]!
+}
+
+"Statistics for a department."
+type DepartmentStat {
+    "Department name."
+    department: String!
+
+    "Number of users in department."
+    users: Int!
+
+    "Number of ideas from department."
+    ideas: Int!
+
+    "Engagement score."
+    engagement_score: Float!
+}
+
+# ============================================================================
+# INPUT TYPES
+# ============================================================================
+
+"Input for logging in."
+input LoginInput {
+    "Email address."
+    email: String! @rules(apply: ["required", "email"])
+
+    "Password."
+    password: String! @rules(apply: ["required", "min:8"])
+}
+
+"Input for registering a new user."
+input RegisterInput {
+    "Full name."
+    name: String! @rules(apply: ["required", "string", "max:255"])
+
+    "Email address."
+    email: String! @rules(apply: ["required", "email", "unique:users,email"])
+
+    "Password."
+    password: String! @rules(apply: ["required", "min:8", "confirmed"])
+
+    "Password confirmation."
+    password_confirmation: String!
+
+    "Department."
+    department: String
+
+    "Job title."
+    job_title: String
+}
+
+"Input for creating an idea."
+input CreateIdeaInput {
+    "Idea title."
+    title: String! @rules(apply: ["required", "string", "max:255"])
+
+    "Detailed description."
+    description: String! @rules(apply: ["required", "string"])
+
+    "Category ID."
+    category_id: ID @rules(apply: ["exists:categories,id"])
+
+    "Whether the submission is anonymous."
+    is_anonymous: Boolean
+
+    "Tag IDs to associate with the idea."
+    tag_ids: [ID!] @rules(apply: ["array"])
+
+    "Attachments (JSON)."
+    attachments: String
+}
+
+"Input for updating an idea."
+input UpdateIdeaInput {
+    "Idea title."
+    title: String @rules(apply: ["string", "max:255"])
+
+    "Detailed description."
+    description: String @rules(apply: ["string"])
+
+    "Category ID."
+    category_id: ID @rules(apply: ["exists:categories,id"])
+
+    "Status."
+    status: String @rules(apply: ["in:draft,pending,approved,rejected,implemented"])
+
+    "Whether the submission is anonymous."
+    is_anonymous: Boolean
+
+    "Tag IDs to associate with the idea."
+    tag_ids: [ID!] @rules(apply: ["array"])
+
+    "Attachments (JSON)."
+    attachments: String
+}
+
+"Input for creating a comment."
+input CreateCommentInput {
+    "ID of the idea being commented on."
+    idea_id: ID! @rules(apply: ["required", "exists:ideas,id"])
+
+    "Comment content."
+    content: String! @rules(apply: ["required", "string"])
+
+    "Parent comment ID (for replies)."
+    parent_id: ID @rules(apply: ["exists:comments,id"])
+}
+
+"Input for creating a category."
+input CreateCategoryInput {
+    "Category name."
+    name: String! @rules(apply: ["required", "string", "max:255"])
+
+    "URL-friendly slug."
+    slug: String! @rules(apply: ["required", "string", "unique:categories,slug"])
+
+    "Category description."
+    description: String
+
+    "Color code."
+    color: String
+
+    "Icon identifier."
+    icon: String
+
+    "Whether the category is active."
+    is_active: Boolean
+}
+
+"Input for updating a category."
+input UpdateCategoryInput {
+    "Category name."
+    name: String @rules(apply: ["string", "max:255"])
+
+    "URL-friendly slug."
+    slug: String @rules(apply: ["string"])
+
+    "Category description."
+    description: String
+
+    "Color code."
+    color: String
+
+    "Icon identifier."
+    icon: String
+
+    "Whether the category is active."
+    is_active: Boolean
+}
+
+"Input for creating a tag."
+input CreateTagInput {
+    "Tag name."
+    name: String! @rules(apply: ["required", "string", "max:100"])
+
+    "URL-friendly slug."
+    slug: String! @rules(apply: ["required", "string", "unique:tags,slug"])
+
+    "Color code."
+    color: String
+}
+
+"Input for updating a tag."
+input UpdateTagInput {
+    "Tag name."
+    name: String @rules(apply: ["string", "max:100"])
+
+    "URL-friendly slug."
+    slug: String @rules(apply: ["string"])
+
+    "Color code."
+    color: String
+}
+
+"Input for updating user profile."
+input UpdateProfileInput {
+    "Full name."
+    name: String @rules(apply: ["string", "max:255"])
+
+    "Profile avatar URL."
+    avatar: String
+
+    "Department."
+    department: String
+
+    "Job title."
+    job_title: String
+}
+
+# ============================================================================
+# PAYLOAD TYPES
+# ============================================================================
+
+"Payload returned after authentication."
+type AuthPayload {
+    "The authenticated user."
+    user: User!
+
+    "The API token for authentication."
+    token: String!
+
+    "Token expiration time."
+    expires_at: DateTime
+}
+
+"Payload returned after logout."
+type LogoutPayload {
+    "Success message."
+    message: String!
+
+    "Whether logout was successful."
+    success: Boolean!
+}
+
+"Payload returned after deletion."
+type DeletePayload {
+    "Success message."
+    message: String!
+
+    "Whether deletion was successful."
+    success: Boolean!
+}
+
+"Payload returned after marking all notifications as read."
+type MarkAllReadPayload {
+    "Success message."
+    message: String!
+
+    "Number of notifications marked as read."
+    count: Int!
+}
+
+# ============================================================================
+# DIRECTIVES & ENUMS
+# ============================================================================
+
+"Options for ordering results."
+input OrderByClause {
+    "The column to order by."
+    column: String!
+
+    "The direction to order (ASC or DESC)."
+    order: SortOrder!
+}
+
+"Sort order direction."
+enum SortOrder {
+    "Ascending order."
+    ASC
+
+    "Descending order."
+    DESC
+}

@@ -289,7 +289,7 @@ const IdeaDetail = () => {
         )}
 
         {/* Workflow Status */}
-        {(idea.status === 'pending' || idea.status === 'under_review' || idea.status === 'approved' || idea.status === 'rejected') && (
+        {(idea.status === 'submitted' || idea.status === 'under_review' || idea.status === 'approved' || idea.status === 'rejected') && (
           <div className="border-t border-gray-200 p-6">
             <WorkflowStatus ideaId={idea.id} />
           </div>
