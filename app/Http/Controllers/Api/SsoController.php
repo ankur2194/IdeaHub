@@ -584,9 +584,90 @@ class SsoController extends Controller
      */
     protected function processSamlCallback(Request $request, array $provider): array
     {
-        // This is a placeholder. In production, use a SAML library to parse and validate
-        // the SAML response, verify signatures, and extract user attributes.
-        throw new \Exception('SAML processing requires a SAML library implementation');
+        $config = $provider['config'];
+
+        // Configure OneLogin SAML settings
+        $samlSettings = [
+            'strict' => true,
+            'debug' => config('app.debug'),
+            'sp' => [
+                'entityId' => $config['entity_id'] ?? config('app.url'),
+                'assertionConsumerService' => [
+                    'url' => route('api.sso.callback'),
+                ],
+            ],
+            'idp' => [
+                'entityId' => $config['idp_entity_id'] ?? '',
+                'singleSignOnService' => [
+                    'url' => $config['sso_url'] ?? '',
+                ],
+                'x509cert' => $config['certificate'] ?? '',
+            ],
+            'security' => [
+                'nameIdEncrypted' => false,
+                'authnRequestsSigned' => false,
+                'logoutRequestSigned' => false,
+                'logoutResponseSigned' => false,
+                'signMetadata' => false,
+                'wantMessagesSigned' => false,
+                'wantAssertionsSigned' => true,
+                'wantNameIdEncrypted' => false,
+            ],
+        ];
+
+        try {
+            $auth = new \OneLogin\Saml2\Auth($samlSettings);
+            $auth->processResponse();
+
+            $errors = $auth->getErrors();
+            if (!empty($errors)) {
+                throw new \Exception('SAML errors: ' . implode(', ', $errors));
+            }
+
+            if (!$auth->isAuthenticated()) {
+                throw new \Exception('SAML authentication failed');
+            }
+
+            $attributes = $auth->getAttributes();
+            $nameId = $auth->getNameId();
+
+            // Map SAML attributes to user data based on attribute mapping config
+            $attributeMapping = $config['attribute_mapping'] ?? [
+                'email' => 'email',
+                'name' => 'displayName',
+                'department' => 'department',
+                'job_title' => 'title',
+            ];
+
+            return [
+                'email' => $this->extractSamlAttribute($attributes, $attributeMapping['email']) ?? $nameId,
+                'name' => $this->extractSamlAttribute($attributes, $attributeMapping['name']) ?? $nameId,
+                'department' => $this->extractSamlAttribute($attributes, $attributeMapping['department'] ?? 'department'),
+                'job_title' => $this->extractSamlAttribute($attributes, $attributeMapping['job_title'] ?? 'title'),
+            ];
+
+        } catch (\Exception $e) {
+            throw new \Exception('SAML processing failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Extract SAML attribute value.
+     */
+    protected function extractSamlAttribute(array $attributes, ?string $key): ?string
+    {
+        if (!$key || !isset($attributes[$key])) {
+            return null;
+        }
+
+        $value = $attributes[$key];
+
+        // SAML attributes are usually arrays
+        if (is_array($value)) {
+            return $value[0] ?? null;
+        }
+
+        return $value;
     }
 
     /**
@@ -594,9 +675,53 @@ class SsoController extends Controller
      */
     protected function processOAuthCallback(Request $request, array $provider): array
     {
-        // This is a placeholder. In production, exchange the authorization code
-        // for an access token and fetch user info from the user info endpoint.
-        throw new \Exception('OAuth processing requires implementation with HTTP client');
+        $config = $provider['config'];
+        $code = $request->input('code');
+
+        if (!$code) {
+            throw new \Exception('Authorization code not provided');
+        }
+
+        try {
+            // Create OAuth2 provider
+            $oauth2Provider = new \League\OAuth2\Client\Provider\GenericProvider([
+                'clientId' => $config['client_id'] ?? '',
+                'clientSecret' => $config['client_secret'] ?? '',
+                'redirectUri' => route('api.sso.callback'),
+                'urlAuthorize' => $config['authorize_url'] ?? '',
+                'urlAccessToken' => $config['token_url'] ?? '',
+                'urlResourceOwnerDetails' => $config['user_info_url'] ?? '',
+            ]);
+
+            // Exchange authorization code for access token
+            $accessToken = $oauth2Provider->getAccessToken('authorization_code', [
+                'code' => $code,
+            ]);
+
+            // Fetch user details from user info endpoint
+            $resourceOwner = $oauth2Provider->getResourceOwner($accessToken);
+            $userInfo = $resourceOwner->toArray();
+
+            // Map OAuth attributes to user data based on attribute mapping config
+            $attributeMapping = $config['attribute_mapping'] ?? [
+                'email' => 'email',
+                'name' => 'name',
+                'department' => 'department',
+                'job_title' => 'title',
+            ];
+
+            return [
+                'email' => $userInfo[$attributeMapping['email']] ?? $userInfo['email'] ?? null,
+                'name' => $userInfo[$attributeMapping['name']] ?? $userInfo['name'] ?? $userInfo['email'] ?? null,
+                'department' => $userInfo[$attributeMapping['department'] ?? 'department'] ?? null,
+                'job_title' => $userInfo[$attributeMapping['job_title'] ?? 'title'] ?? null,
+            ];
+
+        } catch (\League\OAuth2\Client\Provider\Exception\IdentityProviderException $e) {
+            throw new \Exception('OAuth authentication failed: ' . $e->getMessage());
+        } catch (\Exception $e) {
+            throw new \Exception('OAuth processing failed: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -604,8 +729,159 @@ class SsoController extends Controller
      */
     protected function processLdapCallback(Request $request, array $provider): array
     {
-        // This is a placeholder. In production, bind to LDAP server and authenticate user.
-        throw new \Exception('LDAP authentication requires LDAP extension');
+        $config = $provider['config'];
+
+        // Get credentials from request (LDAP auth happens during callback, not initiation)
+        $username = $request->input('username');
+        $password = $request->input('password');
+
+        if (!$username || !$password) {
+            throw new \Exception('Username and password are required for LDAP authentication');
+        }
+
+        // Check if native LDAP extension is available
+        if (!function_exists('ldap_connect')) {
+            // Fallback: Use HTTP-based LDAP authentication if an API gateway is configured
+            if (!empty($config['api_gateway_url'])) {
+                return $this->processLdapViaApi($username, $password, $config);
+            }
+
+            throw new \Exception(
+                'LDAP authentication requires the PHP LDAP extension (ext-ldap). ' .
+                'Please install it using: apt-get install php-ldap (Debian/Ubuntu) or yum install php-ldap (RHEL/CentOS). ' .
+                'Alternatively, configure an LDAP API gateway in the provider settings.'
+            );
+        }
+
+        // Native LDAP authentication
+        try {
+            $host = $config['host'] ?? '';
+            $port = $config['port'] ?? 389;
+            $baseDn = $config['base_dn'] ?? '';
+            $userFilter = $config['user_filter'] ?? '(uid=%s)';
+
+            // Connect to LDAP server
+            $ldapConn = ldap_connect($host, $port);
+
+            if (!$ldapConn) {
+                throw new \Exception('Could not connect to LDAP server');
+            }
+
+            // Set LDAP options
+            ldap_set_option($ldapConn, LDAP_OPT_PROTOCOL_VERSION, 3);
+            ldap_set_option($ldapConn, LDAP_OPT_REFERRALS, 0);
+
+            // Bind with admin credentials to search for user
+            $adminDn = $config['admin_dn'] ?? '';
+            $adminPassword = $config['admin_password'] ?? '';
+
+            if ($adminDn && $adminPassword) {
+                $adminBind = @ldap_bind($ldapConn, $adminDn, $adminPassword);
+                if (!$adminBind) {
+                    throw new \Exception('LDAP admin bind failed');
+                }
+            }
+
+            // Search for user
+            $searchFilter = sprintf($userFilter, ldap_escape($username, '', LDAP_ESCAPE_FILTER));
+            $searchResult = @ldap_search($ldapConn, $baseDn, $searchFilter);
+
+            if (!$searchResult) {
+                throw new \Exception('User not found in LDAP directory');
+            }
+
+            $entries = ldap_get_entries($ldapConn, $searchResult);
+
+            if ($entries['count'] === 0) {
+                throw new \Exception('User not found in LDAP directory');
+            }
+
+            $userDn = $entries[0]['dn'];
+
+            // Attempt to bind with user credentials
+            $userBind = @ldap_bind($ldapConn, $userDn, $password);
+
+            if (!$userBind) {
+                throw new \Exception('Invalid LDAP credentials');
+            }
+
+            // Extract user attributes
+            $attributeMapping = $config['attribute_mapping'] ?? [
+                'email' => 'mail',
+                'name' => 'displayName',
+                'department' => 'department',
+                'job_title' => 'title',
+            ];
+
+            $userData = [
+                'email' => $this->extractLdapAttribute($entries[0], $attributeMapping['email']) ?? $username,
+                'name' => $this->extractLdapAttribute($entries[0], $attributeMapping['name']) ?? $username,
+                'department' => $this->extractLdapAttribute($entries[0], $attributeMapping['department'] ?? 'department'),
+                'job_title' => $this->extractLdapAttribute($entries[0], $attributeMapping['job_title'] ?? 'title'),
+            ];
+
+            ldap_close($ldapConn);
+
+            return $userData;
+
+        } catch (\Exception $e) {
+            throw new \Exception('LDAP authentication failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Process LDAP authentication via API gateway.
+     */
+    protected function processLdapViaApi(string $username, string $password, array $config): array
+    {
+        try {
+            $client = new \GuzzleHttp\Client();
+
+            $response = $client->post($config['api_gateway_url'], [
+                'json' => [
+                    'username' => $username,
+                    'password' => $password,
+                ],
+                'headers' => [
+                    'Accept' => 'application/json',
+                ],
+            ]);
+
+            if ($response->getStatusCode() !== 200) {
+                throw new \Exception('LDAP API authentication failed');
+            }
+
+            $userData = json_decode($response->getBody()->getContents(), true);
+
+            return [
+                'email' => $userData['email'] ?? $username,
+                'name' => $userData['name'] ?? $username,
+                'department' => $userData['department'] ?? null,
+                'job_title' => $userData['job_title'] ?? null,
+            ];
+
+        } catch (\Exception $e) {
+            throw new \Exception('LDAP API authentication failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Extract LDAP attribute value.
+     */
+    protected function extractLdapAttribute(array $entry, ?string $key): ?string
+    {
+        if (!$key || !isset($entry[$key])) {
+            return null;
+        }
+
+        $value = $entry[$key];
+
+        // LDAP attributes have a 'count' key and numeric indices
+        if (is_array($value) && isset($value[0])) {
+            return $value[0];
+        }
+
+        return is_string($value) ? $value : null;
     }
 
     /**

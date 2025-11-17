@@ -11,7 +11,9 @@
         "laravel/framework": "^12.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
+        "league/oauth2-client": "^2.8",
         "nuwave/lighthouse": "^6.63",
+        "onelogin/php-saml": "^4.3",
         "pusher/pusher-php-server": "^7.2"
     },
     "require-dev": {
