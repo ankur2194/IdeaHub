@@ -430,12 +430,21 @@ php artisan test --coverage
 ```bash
 cd frontend
 
-# Run tests (to be implemented)
+# Run all tests
 npm run test
 
-# Run with coverage
+# Run tests with interactive UI
+npm run test:ui
+
+# Run with coverage report
 npm run test:coverage
 ```
+
+**Test Infrastructure:**
+- Vitest 4.0+ with jsdom environment
+- React Testing Library 16.3+
+- 36 test cases (formatters + components)
+- Global test setup with browser API mocks
 
 ---
 
@@ -488,7 +497,7 @@ QUEUE_CONNECTION=redis
 
 - [CLAUDE.md](CLAUDE.md) - Comprehensive development guide for AI assistants
 - [Frontend README](frontend/README.md) - Frontend-specific documentation
-- [API Documentation](docs/api.md) - API reference (coming soon)
+- [API Documentation](docs/api.md) - Complete REST & GraphQL API reference
 - [Deployment Guide](docs/deployment.md) - Production deployment (coming soon)
 
 ---
@@ -526,7 +535,8 @@ QUEUE_CONNECTION=redis
   - [x] Installable on desktop and mobile devices
   - [x] Scalable SVG app icons (192x192, 512x512)
 - [x] **Comprehensive testing infrastructure** ✨
-  - [x] Model factories (Badge, Notification, Category, Idea, Comment)
+  - [x] Backend: 95 PHPUnit tests with model factories
+  - [x] Frontend: Vitest + React Testing Library (36 tests)
   - [x] Broadcast events tests (8 test methods)
   - [x] Export service tests (10 test methods)
 
@@ -554,7 +564,7 @@ We welcome contributions! Here's how to get started:
 4. **Run tests**
    ```bash
    php artisan test
-   cd frontend && npm run lint
+   cd frontend && npm run test && npm run lint
    ```
 5. **Commit your changes**
    ```bash
