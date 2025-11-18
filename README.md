@@ -664,6 +664,4 @@ If you find IdeaHub useful, please consider giving it a star on GitHub!
 
 **[⬆ Back to Top](#ideahub---open-source-innovation-management-platform)**
 
-Made with ❤️ by the IdeaHub Community
-
 </div>
