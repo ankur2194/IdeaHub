@@ -8,6 +8,7 @@ use App\Models\Idea;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ApprovalWorkflowService
 {
@@ -30,8 +31,25 @@ class ApprovalWorkflowService
 
         if (!$workflow) {
             // No workflow found, use default single-level approval
+            Log::info('Initializing default approval workflow', [
+                'idea_id' => $idea->id,
+                'idea_title' => $idea->title,
+                'user_id' => $idea->user_id,
+                'tenant_id' => $idea->tenant_id,
+            ]);
+
             return $this->createDefaultApprovals($idea);
         }
+
+        Log::info('Initializing custom approval workflow', [
+            'idea_id' => $idea->id,
+            'idea_title' => $idea->title,
+            'user_id' => $idea->user_id,
+            'tenant_id' => $idea->tenant_id,
+            'workflow_id' => $workflow->id,
+            'workflow_name' => $workflow->name,
+            'levels' => count($workflow->approval_levels ?? []),
+        ]);
 
         return $this->createWorkflowApprovals($idea, $workflow);
     }
@@ -157,10 +175,29 @@ class ApprovalWorkflowService
 
             // Check if already processed
             if ($approval->status !== self::STATUS_PENDING) {
+                Log::warning('Attempted to process already-processed approval', [
+                    'approval_id' => $approval->id,
+                    'idea_id' => $approval->idea_id,
+                    'approver_id' => $approval->approver_id,
+                    'current_status' => $approval->status,
+                    'attempted_action' => $action,
+                ]);
                 throw new \Exception('This approval has already been processed.');
             }
 
             $idea = $approval->idea;
+
+            Log::info('Processing approval', [
+                'approval_id' => $approval->id,
+                'idea_id' => $idea->id,
+                'idea_title' => $idea->title,
+                'approver_id' => $approval->approver_id,
+                'approver_email' => $approval->approver->email ?? null,
+                'level' => $approval->level,
+                'action' => $action,
+                'has_notes' => !empty($notes),
+                'tenant_id' => $idea->tenant_id,
+            ]);
 
             // Update the approval
             $approval->update([
@@ -174,6 +211,16 @@ class ApprovalWorkflowService
             $idea->update([
                 'status' => self::IDEA_STATUS_REJECTED,
                 'rejected_at' => now(),
+            ]);
+
+            Log::warning('Idea rejected', [
+                'idea_id' => $idea->id,
+                'idea_title' => $idea->title,
+                'author_id' => $idea->user_id,
+                'approver_id' => $approval->approver_id,
+                'level' => $approval->level,
+                'rejection_notes' => $notes,
+                'tenant_id' => $idea->tenant_id,
             ]);
 
             return [
@@ -227,6 +274,15 @@ class ApprovalWorkflowService
                 'approved_at' => now(),
             ]);
 
+            Log::info('Idea fully approved', [
+                'idea_id' => $idea->id,
+                'idea_title' => $idea->title,
+                'author_id' => $idea->user_id,
+                'final_approver_id' => $approval->approver_id,
+                'total_levels' => $currentLevel,
+                'tenant_id' => $idea->tenant_id,
+            ]);
+
             return [
                 'final_status' => self::IDEA_STATUS_APPROVED,
                 'next_level' => null,
@@ -236,6 +292,14 @@ class ApprovalWorkflowService
 
         // Move to next level
         $idea->update(['status' => self::IDEA_STATUS_UNDER_REVIEW]);
+
+            Log::info('Approval level complete, moving to next level', [
+                'idea_id' => $idea->id,
+                'current_level' => $currentLevel,
+                'next_level' => $currentLevel + 1,
+                'pending_approvals_count' => $nextLevelApprovals->count(),
+                'tenant_id' => $idea->tenant_id,
+            ]);
 
             return [
                 'final_status' => 'under_review',
