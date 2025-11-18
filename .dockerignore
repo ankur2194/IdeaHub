@@ -2,59 +2,111 @@
 .git
 .gitignore
 .gitattributes
+.github/
 
-# Documentation
+# Documentation (keep DOCKER.md for reference)
 README.md
 CONTRIBUTING.md
 CLAUDE.md
 docs/
+*.md
+!DOCKER.md
 
 # IDE
-.idea
-.vscode
+.idea/
+.vscode/
 *.swp
 *.swo
 *~
+.editorconfig
 
-# Node modules
-node_modules
-npm-debug.log
-yarn-error.log
+# Node modules (will be installed in container)
+node_modules/
+npm-debug.log*
+yarn-error.log*
+yarn-debug.log*
+package-lock.json
+pnpm-debug.log*
 
 # Frontend build (will be copied from build stage)
-frontend/dist
-frontend/node_modules
+frontend/dist/
+frontend/build/
+frontend/node_modules/
+frontend/.vite/
+frontend/.turbo/
 
-# Laravel
-/vendor
+# Laravel vendor (will be installed in container)
+vendor/
+
+# Laravel storage (except required directories)
+storage/app/*
+!storage/app/.gitignore
+!storage/app/public/
 storage/logs/*
 !storage/logs/.gitignore
-storage/framework/cache/*
-!storage/framework/cache/.gitignore
+storage/framework/cache/data/*
+!storage/framework/cache/data/.gitignore
 storage/framework/sessions/*
 !storage/framework/sessions/.gitignore
 storage/framework/views/*
 !storage/framework/views/.gitignore
+storage/framework/testing/*
+!storage/framework/testing/.gitignore
+
+# Laravel cache
 bootstrap/cache/*
 !bootstrap/cache/.gitignore
+.phpunit.cache
+.phpunit.result.cache
 
-# Environment
+# Environment files (will be created in container)
 .env
 .env.*
+!.env.example
+!.env.docker.example
 
 # Testing
+coverage/
+.coverage
+htmlcov/
+.pytest_cache/
 .phpunit.result.cache
-tests/
-phpunit.xml
 
-# Docker
-Dockerfile
-docker-compose.yml
-.dockerignore
+# Database
+*.sqlite
+*.sqlite-journal
+*.sqlite-shm
+*.sqlite-wal
+database/*.sqlite*
+
+# Docker (exclude other Docker files from being copied)
+Dockerfile.dev
+docker-compose.dev.yml
 
 # CI/CD
-.github
+.github/
+.gitlab-ci.yml
+.travis.yml
+azure-pipelines.yml
 
 # OS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+Desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+*.swp
+*~
