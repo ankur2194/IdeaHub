@@ -29,14 +29,13 @@ class IdeaResolver
     /**
      * Check if the current user has liked the idea.
      *
-     * @param  \App\Models\Idea  $idea
      * @param  array<string, mixed>  $args
      */
     public function isLikedByMe(Idea $idea, array $args)
     {
         $user = auth()->user();
 
-        if (!$user) {
+        if (! $user) {
             return false;
         }
 

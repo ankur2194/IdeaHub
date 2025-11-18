@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DashboardWidgetSeeder extends Seeder
@@ -288,6 +287,6 @@ class DashboardWidgetSeeder extends Seeder
             \App\Models\DashboardWidget::create($widget);
         }
 
-        $this->command->info('Created ' . count($systemWidgets) . ' system widget templates');
+        $this->command->info('Created '.count($systemWidgets).' system widget templates');
     }
 }

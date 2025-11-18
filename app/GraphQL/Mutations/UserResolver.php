@@ -21,7 +21,7 @@ class UserResolver
             'avatar' => $args['avatar'] ?? null,
             'department' => $args['department'] ?? null,
             'job_title' => $args['job_title'] ?? null,
-        ], fn($value) => $value !== null);
+        ], fn ($value) => $value !== null);
 
         $user->update($updateData);
 

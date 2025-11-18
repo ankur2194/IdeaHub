@@ -1,9 +1,11 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import type { ReactNode } from 'react';
 
-export type ToastType = 'success' | 'error' | 'warning' | 'info';
+export type { ToastType, Toast };
 
-export interface Toast {
+type ToastType = 'success' | 'error' | 'warning' | 'info';
+
+interface Toast {
   id: string;
   type: ToastType;
   message: string;
@@ -46,6 +48,7 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useToast = (): ToastContextType => {
   const context = useContext(ToastContext);
   if (!context) {

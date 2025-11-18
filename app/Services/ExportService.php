@@ -5,8 +5,8 @@ namespace App\Services;
 use App\Models\Idea;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class ExportService
 {
@@ -23,7 +23,7 @@ class ExportService
             'generated_at' => now()->format('Y-m-d H:i:s'),
         ]);
 
-        return $pdf->download('analytics-report-' . now()->format('Y-m-d') . '.pdf');
+        return $pdf->download('analytics-report-'.now()->format('Y-m-d').'.pdf');
     }
 
     /**
@@ -35,14 +35,14 @@ class ExportService
 
         $headers = [
             'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="analytics-report-' . now()->format('Y-m-d') . '.csv"',
+            'Content-Disposition' => 'attachment; filename="analytics-report-'.now()->format('Y-m-d').'.csv"',
         ];
 
         return response()->stream(function () use ($data) {
             $file = fopen('php://output', 'w');
 
             // Write headers
-            fputcsv($file, ['Analytics Report - Generated: ' . now()->format('Y-m-d H:i:s')]);
+            fputcsv($file, ['Analytics Report - Generated: '.now()->format('Y-m-d H:i:s')]);
             fputcsv($file, []); // Empty line
 
             // Overview section
@@ -54,7 +54,7 @@ class ExportService
             fputcsv($file, ['Rejected Ideas', $data['overview']['rejected_ideas']]);
             fputcsv($file, ['Total Users', $data['overview']['total_users']]);
             fputcsv($file, ['Total Comments', $data['overview']['total_comments']]);
-            fputcsv($file, ['Approval Rate', $data['overview']['approval_rate'] . '%']);
+            fputcsv($file, ['Approval Rate', $data['overview']['approval_rate'].'%']);
             fputcsv($file, []); // Empty line
 
             // Ideas by category
@@ -115,7 +115,7 @@ class ExportService
 
         $headers = [
             'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="ideas-export-' . now()->format('Y-m-d') . '.csv"',
+            'Content-Disposition' => 'attachment; filename="ideas-export-'.now()->format('Y-m-d').'.csv"',
         ];
 
         return response()->stream(function () use ($ideas) {
@@ -162,7 +162,7 @@ class ExportService
 
         $headers = [
             'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="users-export-' . now()->format('Y-m-d') . '.csv"',
+            'Content-Disposition' => 'attachment; filename="users-export-'.now()->format('Y-m-d').'.csv"',
         ];
 
         return response()->stream(function () use ($users) {
@@ -172,7 +172,7 @@ class ExportService
             fputcsv($file, [
                 'ID', 'Name', 'Email', 'Role', 'Department', 'Active',
                 'Level', 'Points', 'Ideas Submitted', 'Ideas Approved',
-                'Comments Posted', 'Total Badges', 'Created At'
+                'Comments Posted', 'Total Badges', 'Created At',
             ]);
 
             // Write data
@@ -235,7 +235,7 @@ class ExportService
         // Top contributors
         $topContributors = User::select([
             'id', 'name', 'points', 'level',
-            'ideas_submitted', 'ideas_approved', 'comments_posted'
+            'ideas_submitted', 'ideas_approved', 'comments_posted',
         ])
             ->where('ideas_submitted', '>', 0)
             ->orderBy('points', 'desc')

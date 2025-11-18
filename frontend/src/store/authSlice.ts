@@ -25,8 +25,10 @@ export const register = createAsyncThunk(
     try {
       const response = await authService.register(data);
       return response.data;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Registration failed');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Registration failed';
+      const apiError = error as { response?: { data?: { message?: string } } };
+      return rejectWithValue(apiError.response?.data?.message || errorMessage);
     }
   }
 );
@@ -37,8 +39,10 @@ export const login = createAsyncThunk(
     try {
       const response = await authService.login(credentials);
       return response.data;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Login failed');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Login failed';
+      const apiError = error as { response?: { data?: { message?: string } } };
+      return rejectWithValue(apiError.response?.data?.message || errorMessage);
     }
   }
 );
@@ -48,8 +52,10 @@ export const logout = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       await authService.logout();
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Logout failed');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Logout failed';
+      const apiError = error as { response?: { data?: { message?: string } } };
+      return rejectWithValue(apiError.response?.data?.message || errorMessage);
     }
   }
 );
@@ -60,8 +66,10 @@ export const fetchUser = createAsyncThunk(
     try {
       const response = await authService.getUser();
       return response.data;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch user');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch user';
+      const apiError = error as { response?: { data?: { message?: string } } };
+      return rejectWithValue(apiError.response?.data?.message || errorMessage);
     }
   }
 );

@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Badge;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 
 class BadgeController extends Controller
@@ -120,7 +119,7 @@ class BadgeController extends Controller
         $progress = [];
 
         foreach ($criteria as $key => $value) {
-            $current = match($key) {
+            $current = match ($key) {
                 'ideas_submitted' => $user->ideas_submitted,
                 'ideas_approved' => $user->ideas_approved,
                 'comments_posted' => $user->comments_posted,

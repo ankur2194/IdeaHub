@@ -21,7 +21,7 @@ class DashboardWidgetFactory extends Factory
 
         return [
             'tenant_id' => \App\Models\Tenant::factory(),
-            'name' => ucfirst(fake()->words(2, true)) . ' Widget',
+            'name' => ucfirst(fake()->words(2, true)).' Widget',
             'type' => $type,
             'category' => $category,
             'config' => [

@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -21,7 +20,7 @@ class SsoController extends Controller
     {
         $tenant = app('current_tenant');
 
-        if (!$tenant) {
+        if (! $tenant) {
             return response()->json([
                 'success' => false,
                 'message' => 'No tenant context found',
@@ -63,7 +62,7 @@ class SsoController extends Controller
         $user = $request->user();
 
         // Check if user is admin
-        if (!$user || !$user->isAdmin()) {
+        if (! $user || ! $user->isAdmin()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized. Only administrators can view SSO provider details.',
@@ -72,7 +71,7 @@ class SsoController extends Controller
 
         $tenant = app('current_tenant');
 
-        if (!$tenant) {
+        if (! $tenant) {
             return response()->json([
                 'success' => false,
                 'message' => 'No tenant context found',
@@ -82,7 +81,7 @@ class SsoController extends Controller
         $providers = $tenant->settings['sso_providers'] ?? [];
         $provider = collect($providers)->firstWhere('id', $providerId);
 
-        if (!$provider) {
+        if (! $provider) {
             return response()->json([
                 'success' => false,
                 'message' => 'SSO provider not found',
@@ -106,7 +105,7 @@ class SsoController extends Controller
         $user = $request->user();
 
         // Check if user is admin
-        if (!$user || !$user->isAdmin()) {
+        if (! $user || ! $user->isAdmin()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized. Only administrators can configure SSO providers.',
@@ -115,7 +114,7 @@ class SsoController extends Controller
 
         $tenant = app('current_tenant');
 
-        if (!$tenant) {
+        if (! $tenant) {
             return response()->json([
                 'success' => false,
                 'message' => 'No tenant context found',
@@ -178,7 +177,7 @@ class SsoController extends Controller
 
         // Check if updating existing or creating new
         $providerId = $request->input('id') ?? Str::uuid()->toString();
-        $existingIndex = collect($providers)->search(fn($p) => $p['id'] === $providerId);
+        $existingIndex = collect($providers)->search(fn ($p) => $p['id'] === $providerId);
 
         $providerData = [
             'id' => $providerId,
@@ -274,7 +273,7 @@ class SsoController extends Controller
         $user = $request->user();
 
         // Check if user is admin
-        if (!$user || !$user->isAdmin()) {
+        if (! $user || ! $user->isAdmin()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized. Only administrators can delete SSO providers.',
@@ -283,7 +282,7 @@ class SsoController extends Controller
 
         $tenant = app('current_tenant');
 
-        if (!$tenant) {
+        if (! $tenant) {
             return response()->json([
                 'success' => false,
                 'message' => 'No tenant context found',
@@ -293,7 +292,7 @@ class SsoController extends Controller
         $settings = $tenant->settings ?? [];
         $providers = $settings['sso_providers'] ?? [];
 
-        $index = collect($providers)->search(fn($p) => $p['id'] === $providerId);
+        $index = collect($providers)->search(fn ($p) => $p['id'] === $providerId);
 
         if ($index === false) {
             return response()->json([
@@ -321,7 +320,7 @@ class SsoController extends Controller
     {
         $tenant = app('current_tenant');
 
-        if (!$tenant) {
+        if (! $tenant) {
             return response()->json([
                 'success' => false,
                 'message' => 'No tenant context found',
@@ -331,7 +330,7 @@ class SsoController extends Controller
         $providers = $tenant->settings['sso_providers'] ?? [];
         $provider = collect($providers)->firstWhere('id', $providerId);
 
-        if (!$provider || !($provider['enabled'] ?? false)) {
+        if (! $provider || ! ($provider['enabled'] ?? false)) {
             return response()->json([
                 'success' => false,
                 'message' => 'SSO provider not found or not enabled',
@@ -393,7 +392,7 @@ class SsoController extends Controller
     {
         $tenant = app('current_tenant');
 
-        if (!$tenant) {
+        if (! $tenant) {
             return response()->json([
                 'success' => false,
                 'message' => 'No tenant context found',
@@ -404,7 +403,7 @@ class SsoController extends Controller
         $state = $request->input('state');
         $sessionState = session('sso_state');
 
-        if (!$state || $state !== $sessionState) {
+        if (! $state || $state !== $sessionState) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid state token. Possible CSRF attack.',
@@ -415,7 +414,7 @@ class SsoController extends Controller
         $providers = $tenant->settings['sso_providers'] ?? [];
         $provider = collect($providers)->firstWhere('id', $providerId);
 
-        if (!$provider || !($provider['enabled'] ?? false)) {
+        if (! $provider || ! ($provider['enabled'] ?? false)) {
             return response()->json([
                 'success' => false,
                 'message' => 'SSO provider not found or not enabled',
@@ -468,7 +467,7 @@ class SsoController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'SSO authentication failed: ' . $e->getMessage(),
+                'message' => 'SSO authentication failed: '.$e->getMessage(),
             ], 400);
         }
     }
@@ -481,7 +480,7 @@ class SsoController extends Controller
         $user = $request->user();
 
         // Check if user is admin
-        if (!$user || !$user->isAdmin()) {
+        if (! $user || ! $user->isAdmin()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized. Only administrators can test SSO providers.',
@@ -490,7 +489,7 @@ class SsoController extends Controller
 
         $tenant = app('current_tenant');
 
-        if (!$tenant) {
+        if (! $tenant) {
             return response()->json([
                 'success' => false,
                 'message' => 'No tenant context found',
@@ -500,7 +499,7 @@ class SsoController extends Controller
         $providers = $tenant->settings['sso_providers'] ?? [];
         $provider = collect($providers)->firstWhere('id', $providerId);
 
-        if (!$provider) {
+        if (! $provider) {
             return response()->json([
                 'success' => false,
                 'message' => 'SSO provider not found',
@@ -557,7 +556,7 @@ class SsoController extends Controller
         $ssoUrl = $provider['config']['sso_url'];
         $callbackUrl = url('/api/sso/callback');
 
-        return $ssoUrl . '?' . http_build_query([
+        return $ssoUrl.'?'.http_build_query([
             'SAMLRequest' => base64_encode('<!-- SAML Request XML -->'),
             'RelayState' => $state,
         ]);
@@ -571,7 +570,7 @@ class SsoController extends Controller
         $config = $provider['config'];
         $callbackUrl = url('/api/sso/callback');
 
-        return $config['authorize_url'] . '?' . http_build_query([
+        return $config['authorize_url'].'?'.http_build_query([
             'client_id' => $config['client_id'],
             'redirect_uri' => $callbackUrl,
             'response_type' => 'code',
@@ -621,11 +620,11 @@ class SsoController extends Controller
             $auth->processResponse();
 
             $errors = $auth->getErrors();
-            if (!empty($errors)) {
-                throw new \Exception('SAML errors: ' . implode(', ', $errors));
+            if (! empty($errors)) {
+                throw new \Exception('SAML errors: '.implode(', ', $errors));
             }
 
-            if (!$auth->isAuthenticated()) {
+            if (! $auth->isAuthenticated()) {
                 throw new \Exception('SAML authentication failed');
             }
 
@@ -648,7 +647,7 @@ class SsoController extends Controller
             ];
 
         } catch (\Exception $e) {
-            throw new \Exception('SAML processing failed: ' . $e->getMessage());
+            throw new \Exception('SAML processing failed: '.$e->getMessage());
         }
     }
 
@@ -657,7 +656,7 @@ class SsoController extends Controller
      */
     protected function extractSamlAttribute(array $attributes, ?string $key): ?string
     {
-        if (!$key || !isset($attributes[$key])) {
+        if (! $key || ! isset($attributes[$key])) {
             return null;
         }
 
@@ -679,7 +678,7 @@ class SsoController extends Controller
         $config = $provider['config'];
         $code = $request->input('code');
 
-        if (!$code) {
+        if (! $code) {
             throw new \Exception('Authorization code not provided');
         }
 
@@ -719,9 +718,9 @@ class SsoController extends Controller
             ];
 
         } catch (\League\OAuth2\Client\Provider\Exception\IdentityProviderException $e) {
-            throw new \Exception('OAuth authentication failed: ' . $e->getMessage());
+            throw new \Exception('OAuth authentication failed: '.$e->getMessage());
         } catch (\Exception $e) {
-            throw new \Exception('OAuth processing failed: ' . $e->getMessage());
+            throw new \Exception('OAuth processing failed: '.$e->getMessage());
         }
     }
 
@@ -736,20 +735,20 @@ class SsoController extends Controller
         $username = $request->input('username');
         $password = $request->input('password');
 
-        if (!$username || !$password) {
+        if (! $username || ! $password) {
             throw new \Exception('Username and password are required for LDAP authentication');
         }
 
         // Check if native LDAP extension is available
-        if (!function_exists('ldap_connect')) {
+        if (! function_exists('ldap_connect')) {
             // Fallback: Use HTTP-based LDAP authentication if an API gateway is configured
-            if (!empty($config['api_gateway_url'])) {
+            if (! empty($config['api_gateway_url'])) {
                 return $this->processLdapViaApi($username, $password, $config);
             }
 
             throw new \Exception(
-                'LDAP authentication requires the PHP LDAP extension (ext-ldap). ' .
-                'Please install it using: apt-get install php-ldap (Debian/Ubuntu) or yum install php-ldap (RHEL/CentOS). ' .
+                'LDAP authentication requires the PHP LDAP extension (ext-ldap). '.
+                'Please install it using: apt-get install php-ldap (Debian/Ubuntu) or yum install php-ldap (RHEL/CentOS). '.
                 'Alternatively, configure an LDAP API gateway in the provider settings.'
             );
         }
@@ -764,7 +763,7 @@ class SsoController extends Controller
             // Connect to LDAP server
             $ldapConn = ldap_connect($host, $port);
 
-            if (!$ldapConn) {
+            if (! $ldapConn) {
                 throw new \Exception('Could not connect to LDAP server');
             }
 
@@ -778,7 +777,7 @@ class SsoController extends Controller
 
             if ($adminDn && $adminPassword) {
                 $adminBind = @ldap_bind($ldapConn, $adminDn, $adminPassword);
-                if (!$adminBind) {
+                if (! $adminBind) {
                     throw new \Exception('LDAP admin bind failed');
                 }
             }
@@ -787,7 +786,7 @@ class SsoController extends Controller
             $searchFilter = sprintf($userFilter, ldap_escape($username, '', LDAP_ESCAPE_FILTER));
             $searchResult = @ldap_search($ldapConn, $baseDn, $searchFilter);
 
-            if (!$searchResult) {
+            if (! $searchResult) {
                 throw new \Exception('User not found in LDAP directory');
             }
 
@@ -802,7 +801,7 @@ class SsoController extends Controller
             // Attempt to bind with user credentials
             $userBind = @ldap_bind($ldapConn, $userDn, $password);
 
-            if (!$userBind) {
+            if (! $userBind) {
                 throw new \Exception('Invalid LDAP credentials');
             }
 
@@ -826,7 +825,7 @@ class SsoController extends Controller
             return $userData;
 
         } catch (\Exception $e) {
-            throw new \Exception('LDAP authentication failed: ' . $e->getMessage());
+            throw new \Exception('LDAP authentication failed: '.$e->getMessage());
         }
     }
 
@@ -836,7 +835,7 @@ class SsoController extends Controller
     protected function processLdapViaApi(string $username, string $password, array $config): array
     {
         try {
-            $client = new \GuzzleHttp\Client();
+            $client = new \GuzzleHttp\Client;
 
             $response = $client->post($config['api_gateway_url'], [
                 'json' => [
@@ -862,7 +861,7 @@ class SsoController extends Controller
             ];
 
         } catch (\Exception $e) {
-            throw new \Exception('LDAP API authentication failed: ' . $e->getMessage());
+            throw new \Exception('LDAP API authentication failed: '.$e->getMessage());
         }
     }
 
@@ -871,7 +870,7 @@ class SsoController extends Controller
      */
     protected function extractLdapAttribute(array $entry, ?string $key): ?string
     {
-        if (!$key || !isset($entry[$key])) {
+        if (! $key || ! isset($entry[$key])) {
             return null;
         }
 
@@ -892,7 +891,7 @@ class SsoController extends Controller
     {
         $email = $userData['email'] ?? null;
 
-        if (!$email) {
+        if (! $email) {
             throw new \Exception('Email address not provided by SSO provider');
         }
 
@@ -900,8 +899,8 @@ class SsoController extends Controller
             ->where('tenant_id', $tenant->id)
             ->first();
 
-        if (!$user) {
-            if (!($provider['auto_provision'] ?? false)) {
+        if (! $user) {
+            if (! ($provider['auto_provision'] ?? false)) {
                 throw new \Exception('User does not exist and auto-provisioning is disabled');
             }
 
@@ -934,7 +933,7 @@ class SsoController extends Controller
         $results['sso_url_accessible'] = filter_var($config['sso_url'], FILTER_VALIDATE_URL) !== false;
 
         // Test certificate validity
-        $results['certificate_provided'] = !empty($config['certificate']);
+        $results['certificate_provided'] = ! empty($config['certificate']);
 
         return $results;
     }
@@ -953,8 +952,8 @@ class SsoController extends Controller
         $results['user_info_url_valid'] = filter_var($config['user_info_url'], FILTER_VALIDATE_URL) !== false;
 
         // Check credentials provided
-        $results['client_id_provided'] = !empty($config['client_id']);
-        $results['client_secret_provided'] = !empty($config['client_secret']);
+        $results['client_id_provided'] = ! empty($config['client_id']);
+        $results['client_secret_provided'] = ! empty($config['client_secret']);
 
         return $results;
     }
@@ -968,8 +967,8 @@ class SsoController extends Controller
         $results = [];
 
         // Check configuration
-        $results['host_provided'] = !empty($config['host']);
-        $results['base_dn_provided'] = !empty($config['base_dn']);
+        $results['host_provided'] = ! empty($config['host']);
+        $results['base_dn_provided'] = ! empty($config['base_dn']);
         $results['port_valid'] = isset($config['port']) && $config['port'] > 0 && $config['port'] <= 65535;
 
         return $results;

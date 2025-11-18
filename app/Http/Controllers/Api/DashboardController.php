@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\UserDashboard;
 use App\Models\DashboardWidget;
+use App\Models\UserDashboard;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -59,7 +59,7 @@ class DashboardController extends Controller
         ]);
 
         // Generate slug if not provided
-        if (!isset($validated['slug'])) {
+        if (! isset($validated['slug'])) {
             $validated['slug'] = Str::slug($validated['name']);
         }
 
@@ -69,7 +69,7 @@ class DashboardController extends Controller
         while (UserDashboard::where('user_id', $request->user()->id)
             ->where('slug', $validated['slug'])
             ->exists()) {
-            $validated['slug'] = $baseSlug . '-' . $counter;
+            $validated['slug'] = $baseSlug.'-'.$counter;
             $counter++;
         }
 
@@ -95,7 +95,7 @@ class DashboardController extends Controller
     public function show(Request $request, UserDashboard $dashboard): JsonResponse
     {
         // Check if user owns this dashboard or if it's shared
-        if ($dashboard->user_id !== $request->user()->id && !$dashboard->is_shared) {
+        if ($dashboard->user_id !== $request->user()->id && ! $dashboard->is_shared) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized access to this dashboard',
@@ -284,7 +284,7 @@ class DashboardController extends Controller
     public function widgetData(Request $request, UserDashboard $dashboard, string $widgetId): JsonResponse
     {
         // Check if user owns this dashboard or if it's shared
-        if ($dashboard->user_id !== $request->user()->id && !$dashboard->is_shared) {
+        if ($dashboard->user_id !== $request->user()->id && ! $dashboard->is_shared) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized access to this dashboard',
@@ -295,7 +295,7 @@ class DashboardController extends Controller
         $widgets = $dashboard->widgets ?? [];
         $widgetConfig = collect($widgets)->firstWhere('id', $widgetId);
 
-        if (!$widgetConfig) {
+        if (! $widgetConfig) {
             return response()->json([
                 'success' => false,
                 'message' => 'Widget not found in this dashboard',
@@ -304,7 +304,7 @@ class DashboardController extends Controller
 
         // Get the widget template
         $widget = DashboardWidget::find($widgetConfig['widget_id']);
-        if (!$widget) {
+        if (! $widget) {
             return response()->json([
                 'success' => false,
                 'message' => 'Widget template not found',

@@ -3,14 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Idea;
-use App\Models\User;
 use App\Models\Category;
 use App\Models\Comment;
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\DB;
+use App\Models\Idea;
+use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class AnalyticsController extends Controller
 {
@@ -61,7 +61,7 @@ class AnalyticsController extends Controller
     {
         $period = $request->get('period', '30days'); // 7days, 30days, 90days, 1year
 
-        $startDate = match($period) {
+        $startDate = match ($period) {
             '7days' => Carbon::now()->subDays(7),
             '30days' => Carbon::now()->subDays(30),
             '90days' => Carbon::now()->subDays(90),
@@ -69,7 +69,7 @@ class AnalyticsController extends Controller
             default => Carbon::now()->subDays(30),
         };
 
-        $groupBy = match($period) {
+        $groupBy = match ($period) {
             '7days' => 'DATE(created_at)',
             '30days' => 'DATE(created_at)',
             '90days' => 'DATE(created_at)',
@@ -78,10 +78,10 @@ class AnalyticsController extends Controller
         };
 
         $ideas = Idea::select(
-                DB::raw('DATE(created_at) as date'),
-                DB::raw('COUNT(*) as count'),
-                'status'
-            )
+            DB::raw('DATE(created_at) as date'),
+            DB::raw('COUNT(*) as count'),
+            'status'
+        )
             ->where('created_at', '>=', $startDate)
             ->groupBy('date', 'status')
             ->orderBy('date', 'asc')
@@ -93,11 +93,11 @@ class AnalyticsController extends Controller
 
         foreach ($ideas as $idea) {
             $date = Carbon::parse($idea->date)->format('Y-m-d');
-            if (!in_array($date, $dates)) {
+            if (! in_array($date, $dates)) {
                 $dates[] = $date;
             }
 
-            if (!isset($data[$idea->status])) {
+            if (! isset($data[$idea->status])) {
                 $data[$idea->status] = [];
             }
             $data[$idea->status][$date] = $idea->count;

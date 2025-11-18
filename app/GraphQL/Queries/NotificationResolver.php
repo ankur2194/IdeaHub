@@ -16,7 +16,7 @@ class NotificationResolver
     {
         $user = auth()->user();
 
-        if (!$user) {
+        if (! $user) {
             return 0;
         }
 

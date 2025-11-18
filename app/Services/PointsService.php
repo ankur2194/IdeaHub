@@ -8,9 +8,13 @@ class PointsService
 {
     // Point values for different actions
     const POINTS_IDEA_SUBMITTED = 10;
+
     const POINTS_IDEA_APPROVED = 50;
+
     const POINTS_IDEA_IMPLEMENTED = 100;
+
     const POINTS_COMMENT_CREATED = 5;
+
     const POINTS_LIKE_RECEIVED = 2;
 
     /**
@@ -21,7 +25,7 @@ class PointsService
         $user->increment('points', $points);
 
         // Log the point award (optional: create a points_history table)
-        logger()->info("Points awarded", [
+        logger()->info('Points awarded', [
             'user_id' => $user->id,
             'points' => $points,
             'reason' => $reason,
@@ -76,7 +80,7 @@ class PointsService
     {
         $user->decrement('points', $points);
 
-        logger()->info("Points deducted", [
+        logger()->info('Points deducted', [
             'user_id' => $user->id,
             'points' => $points,
             'reason' => $reason,

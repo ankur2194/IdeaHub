@@ -21,7 +21,7 @@ class UserDashboardFactory extends Factory
         return [
             'user_id' => \App\Models\User::factory(),
             'tenant_id' => \App\Models\Tenant::factory(),
-            'name' => ucfirst($name) . ' Dashboard',
+            'name' => ucfirst($name).' Dashboard',
             'slug' => \Illuminate\Support\Str::slug($name),
             'widgets' => [],
             'layout' => [

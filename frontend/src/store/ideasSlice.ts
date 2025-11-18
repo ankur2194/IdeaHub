@@ -37,8 +37,10 @@ export const fetchIdeas = createAsyncThunk(
     try {
       const response = await ideaService.getIdeas(filters);
       return response.data;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch ideas');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch ideas';
+      const apiError = error as { response?: { data?: { message?: string } } };
+      return rejectWithValue(apiError.response?.data?.message || errorMessage);
     }
   }
 );
@@ -49,8 +51,10 @@ export const fetchIdea = createAsyncThunk(
     try {
       const response = await ideaService.getIdea(id);
       return response.data;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch idea');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch idea';
+      const apiError = error as { response?: { data?: { message?: string } } };
+      return rejectWithValue(apiError.response?.data?.message || errorMessage);
     }
   }
 );
@@ -61,8 +65,10 @@ export const createIdea = createAsyncThunk(
     try {
       const response = await ideaService.createIdea(data);
       return response.data;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to create idea');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create idea';
+      const apiError = error as { response?: { data?: { message?: string } } };
+      return rejectWithValue(apiError.response?.data?.message || errorMessage);
     }
   }
 );
@@ -73,8 +79,10 @@ export const updateIdea = createAsyncThunk(
     try {
       const response = await ideaService.updateIdea(id, data);
       return response.data;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to update idea');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update idea';
+      const apiError = error as { response?: { data?: { message?: string } } };
+      return rejectWithValue(apiError.response?.data?.message || errorMessage);
     }
   }
 );
@@ -85,8 +93,10 @@ export const deleteIdea = createAsyncThunk(
     try {
       await ideaService.deleteIdea(id);
       return id;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to delete idea');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete idea';
+      const apiError = error as { response?: { data?: { message?: string } } };
+      return rejectWithValue(apiError.response?.data?.message || errorMessage);
     }
   }
 );
@@ -97,8 +107,10 @@ export const submitIdea = createAsyncThunk(
     try {
       const response = await ideaService.submitIdea(id);
       return response.data;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to submit idea');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to submit idea';
+      const apiError = error as { response?: { data?: { message?: string } } };
+      return rejectWithValue(apiError.response?.data?.message || errorMessage);
     }
   }
 );
@@ -109,8 +121,10 @@ export const likeIdea = createAsyncThunk(
     try {
       const response = await ideaService.likeIdea(id);
       return { id, ...response.data };
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to like idea');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to like idea';
+      const apiError = error as { response?: { data?: { message?: string } } };
+      return rejectWithValue(apiError.response?.data?.message || errorMessage);
     }
   }
 );

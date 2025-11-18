@@ -252,7 +252,7 @@ class AuthControllerTest extends TestCase
         $response->assertStatus(200);
 
         // Old token should not work
-        $this->withHeader('Authorization', 'Bearer ' . $oldToken)
+        $this->withHeader('Authorization', 'Bearer '.$oldToken)
             ->getJson('/api/user')
             ->assertStatus(401);
     }
@@ -265,7 +265,7 @@ class AuthControllerTest extends TestCase
         $user = User::factory()->create();
         $token = $user->createToken('auth-token')->plainTextToken;
 
-        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
+        $response = $this->withHeader('Authorization', 'Bearer '.$token)
             ->postJson('/api/logout');
 
         $response->assertStatus(200)
@@ -275,7 +275,7 @@ class AuthControllerTest extends TestCase
             ]);
 
         // Token should no longer work
-        $this->withHeader('Authorization', 'Bearer ' . $token)
+        $this->withHeader('Authorization', 'Bearer '.$token)
             ->getJson('/api/user')
             ->assertStatus(401);
     }

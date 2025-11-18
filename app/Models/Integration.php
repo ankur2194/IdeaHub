@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Integration extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use BelongsToTenant, HasFactory;
 
     /**
      * The attributes that are mass assignable.
@@ -70,7 +70,7 @@ class Integration extends Model
      */
     public function isConfigured(): bool
     {
-        return !empty($this->config) && $this->is_active;
+        return ! empty($this->config) && $this->is_active;
     }
 
     /**

@@ -30,7 +30,7 @@ class WidgetController extends Controller
         // Show system widgets and custom widgets for the tenant
         $query->where(function ($q) {
             $q->where('is_system', true)
-              ->orWhereNotNull('tenant_id');
+                ->orWhereNotNull('tenant_id');
         });
 
         $widgets = $query->orderBy('is_system', 'desc')
@@ -58,7 +58,7 @@ class WidgetController extends Controller
     public function store(Request $request): JsonResponse
     {
         // Check if user is admin
-        if (!$request->user()->isAdmin()) {
+        if (! $request->user()->isAdmin()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized. Only administrators can create widget templates.',
@@ -105,7 +105,7 @@ class WidgetController extends Controller
     public function update(Request $request, DashboardWidget $widget): JsonResponse
     {
         // Check if user is admin
-        if (!$request->user()->isAdmin()) {
+        if (! $request->user()->isAdmin()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized. Only administrators can update widget templates.',
@@ -148,7 +148,7 @@ class WidgetController extends Controller
     public function destroy(Request $request, DashboardWidget $widget): JsonResponse
     {
         // Check if user is admin
-        if (!$request->user()->isAdmin()) {
+        if (! $request->user()->isAdmin()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized. Only administrators can delete widget templates.',
@@ -206,14 +206,14 @@ class WidgetController extends Controller
      */
     protected function generateSampleData(string $type): array
     {
-        return match($type) {
+        return match ($type) {
             'stats_card' => [
                 'count' => rand(100, 1000),
                 'label' => 'Sample Metric',
-                'change' => '+' . rand(5, 25) . '%',
+                'change' => '+'.rand(5, 25).'%',
             ],
             'bar', 'line', 'area' => [
-                'data' => collect(range(1, 7))->map(fn($i) => [
+                'data' => collect(range(1, 7))->map(fn ($i) => [
                     'date' => now()->subDays(7 - $i)->format('Y-m-d'),
                     'count' => rand(10, 100),
                 ])->toArray(),
@@ -227,9 +227,9 @@ class WidgetController extends Controller
                 ],
             ],
             'table', 'list' => [
-                'data' => collect(range(1, 5))->map(fn($i) => [
+                'data' => collect(range(1, 5))->map(fn ($i) => [
                     'id' => $i,
-                    'title' => 'Sample Item ' . $i,
+                    'title' => 'Sample Item '.$i,
                     'value' => rand(100, 1000),
                     'status' => collect(['pending', 'approved', 'rejected'])->random(),
                     'created_at' => now()->subDays(rand(1, 30))->toIso8601String(),

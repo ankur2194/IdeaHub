@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
@@ -37,7 +36,7 @@ class CategoryController extends Controller
     public function store(Request $request)
     {
         // Only admins can create categories
-        if (!Auth::user()->isAdmin()) {
+        if (! Auth::user()->isAdmin()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized to create categories',
@@ -85,7 +84,7 @@ class CategoryController extends Controller
     public function update(Request $request, Category $category)
     {
         // Only admins can update categories
-        if (!Auth::user()->isAdmin()) {
+        if (! Auth::user()->isAdmin()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized to update categories',
@@ -93,7 +92,7 @@ class CategoryController extends Controller
         }
 
         $validated = $request->validate([
-            'name' => 'sometimes|required|string|max:255|unique:categories,name,' . $category->id,
+            'name' => 'sometimes|required|string|max:255|unique:categories,name,'.$category->id,
             'description' => 'nullable|string',
             'color' => 'nullable|string|size:7|regex:/^#[0-9A-Fa-f]{6}$/',
             'icon' => 'nullable|string|max:50',
@@ -119,7 +118,7 @@ class CategoryController extends Controller
     public function destroy(Category $category)
     {
         // Only admins can delete categories
-        if (!Auth::user()->isAdmin()) {
+        if (! Auth::user()->isAdmin()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized to delete categories',

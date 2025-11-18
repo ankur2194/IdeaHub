@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Models\Traits\BelongsToTenant;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -12,7 +12,7 @@ use Laravel\Sanctum\HasApiTokens;
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasApiTokens, BelongsToTenant;
+    use BelongsToTenant, HasApiTokens, HasFactory, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -128,7 +128,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function getRankAttribute(): string
     {
-        return match(true) {
+        return match (true) {
             $this->level >= 50 => 'Innovation Master',
             $this->level >= 40 => 'Visionary Leader',
             $this->level >= 30 => 'Expert Innovator',
@@ -154,6 +154,7 @@ class User extends Authenticatable implements MustVerifyEmail
     public function getLevelProgressAttribute(): int
     {
         $xpNeeded = $this->getXpForNextLevel();
+
         return $xpNeeded > 0 ? (int) (($this->experience / $xpNeeded) * 100) : 0;
     }
 

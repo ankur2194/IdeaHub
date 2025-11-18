@@ -21,8 +21,10 @@ export const fetchTags = createAsyncThunk(
     try {
       const response = await tagService.getTags();
       return response.data;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch tags');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch tags';
+      const apiError = error as { response?: { data?: { message?: string } } };
+      return rejectWithValue(apiError.response?.data?.message || errorMessage);
     }
   }
 );

@@ -43,7 +43,7 @@ class CommentPostedMail extends Mailable
                 'ideaTitle' => $this->idea->title,
                 'commentContent' => $this->comment->content,
                 'commenterName' => $this->comment->user->name,
-                'ideaUrl' => config('app.frontend_url', 'http://localhost:5173') . '/ideas/' . $this->idea->id,
+                'ideaUrl' => config('app.frontend_url', 'http://localhost:5173').'/ideas/'.$this->idea->id,
             ],
         );
     }

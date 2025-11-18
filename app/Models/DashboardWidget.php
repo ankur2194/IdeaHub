@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class DashboardWidget extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use BelongsToTenant, HasFactory;
 
     /**
      * The attributes that are mass assignable.
@@ -114,7 +114,7 @@ class DashboardWidget extends Model
      */
     protected function fetchDataByType(array $config, array $filters): array
     {
-        return match($this->category) {
+        return match ($this->category) {
             'ideas' => $this->fetchIdeasData($config, $filters),
             'users' => $this->fetchUsersData($config, $filters),
             'analytics' => $this->fetchAnalyticsData($config, $filters),
@@ -139,7 +139,7 @@ class DashboardWidget extends Model
             $query->whereBetween('created_at', $filters['date_range']);
         }
 
-        return match($this->type) {
+        return match ($this->type) {
             'stats_card' => ['count' => $query->count()],
             'bar', 'line', 'area' => $this->aggregateByDate($query),
             'pie' => $this->aggregateByStatus($query),
@@ -155,7 +155,7 @@ class DashboardWidget extends Model
     {
         $query = User::query();
 
-        return match($this->type) {
+        return match ($this->type) {
             'stats_card' => ['count' => $query->count()],
             'bar', 'line' => $this->aggregateUsersByDate($query),
             'table', 'list' => $query->latest()->limit(10)->get()->toArray(),
@@ -189,7 +189,7 @@ class DashboardWidget extends Model
             $query->where('status', $config['status']);
         }
 
-        return match($this->type) {
+        return match ($this->type) {
             'stats_card' => ['count' => $query->count()],
             'pie' => $this->aggregateApprovalsByStatus($query),
             'table', 'list' => $query->latest()->limit(10)->get()->toArray(),

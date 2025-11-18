@@ -8,7 +8,7 @@ export interface Badge {
   icon: string;
   type: string;
   category: string | null;
-  criteria: Record<string, any>;
+  criteria: Record<string, unknown>;
   points_reward: number;
   rarity: 'common' | 'rare' | 'epic' | 'legendary';
   order: number;

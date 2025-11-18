@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class UserDashboard extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use BelongsToTenant, HasFactory;
 
     /**
      * The attributes that are mass assignable.
@@ -79,7 +79,7 @@ class UserDashboard extends Model
     public function removeWidget(string $widgetId): void
     {
         $widgets = $this->widgets ?? [];
-        $widgets = array_filter($widgets, fn($widget) => $widget['id'] !== $widgetId);
+        $widgets = array_filter($widgets, fn ($widget) => $widget['id'] !== $widgetId);
         $this->update(['widgets' => array_values($widgets)]);
     }
 
@@ -89,10 +89,11 @@ class UserDashboard extends Model
     public function updateWidget(string $widgetId, array $newConfig): void
     {
         $widgets = $this->widgets ?? [];
-        $widgets = array_map(function($widget) use ($widgetId, $newConfig) {
+        $widgets = array_map(function ($widget) use ($widgetId, $newConfig) {
             if ($widget['id'] === $widgetId) {
                 return array_merge($widget, $newConfig);
             }
+
             return $widget;
         }, $widgets);
         $this->update(['widgets' => $widgets]);

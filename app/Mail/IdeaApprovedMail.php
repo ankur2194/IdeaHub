@@ -43,7 +43,7 @@ class IdeaApprovedMail extends Mailable
                 'ideaTitle' => $this->idea->title,
                 'ideaDescription' => $this->idea->description,
                 'approverName' => $this->approver->name,
-                'ideaUrl' => config('app.frontend_url', 'http://localhost:5173') . '/ideas/' . $this->idea->id,
+                'ideaUrl' => config('app.frontend_url', 'http://localhost:5173').'/ideas/'.$this->idea->id,
                 'points' => 50, // Points awarded for approval
             ],
         );

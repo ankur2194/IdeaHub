@@ -45,7 +45,7 @@ class IdeaRejectedMail extends Mailable
                 'ideaDescription' => $this->idea->description,
                 'approverName' => $this->approver->name,
                 'reason' => $this->reason,
-                'ideaUrl' => config('app.frontend_url', 'http://localhost:5173') . '/ideas/' . $this->idea->id,
+                'ideaUrl' => config('app.frontend_url', 'http://localhost:5173').'/ideas/'.$this->idea->id,
             ],
         );
     }

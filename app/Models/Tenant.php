@@ -62,7 +62,7 @@ class Tenant extends Model
      */
     public function isOnTrial(): bool
     {
-        return $this->trial_ends_at && $this->trial_ends_at->isFuture() && !$this->subscribed_at;
+        return $this->trial_ends_at && $this->trial_ends_at->isFuture() && ! $this->subscribed_at;
     }
 
     /**
@@ -70,7 +70,7 @@ class Tenant extends Model
      */
     public function hasExpired(): bool
     {
-        return $this->trial_ends_at && $this->trial_ends_at->isPast() && !$this->subscribed_at;
+        return $this->trial_ends_at && $this->trial_ends_at->isPast() && ! $this->subscribed_at;
     }
 
     /**

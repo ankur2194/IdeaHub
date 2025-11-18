@@ -89,7 +89,7 @@ class TenantBranding extends Model
         $cssString .= '}';
 
         if ($this->custom_css) {
-            $cssString .= "\n" . $this->custom_css;
+            $cssString .= "\n".$this->custom_css;
         }
 
         return $cssString;

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { CheckCircleIcon, XCircleIcon, ClockIcon } from '@heroicons/react/24/solid';
 import api from '../../services/api';
 
@@ -38,11 +38,7 @@ const WorkflowStatus: React.FC<WorkflowStatusProps> = ({ ideaId }) => {
   const [workflow, setWorkflow] = useState<WorkflowStatusData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadWorkflowStatus();
-  }, [ideaId]);
-
-  const loadWorkflowStatus = async () => {
+  const loadWorkflowStatus = useCallback(async () => {
     try {
       const response = await api.get(`/ideas/${ideaId}/workflow-status`);
       setWorkflow(response.data.data);
@@ -51,7 +47,11 @@ const WorkflowStatus: React.FC<WorkflowStatusProps> = ({ ideaId }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [ideaId]);
+
+  useEffect(() => {
+    loadWorkflowStatus();
+  }, [loadWorkflowStatus]);
 
   if (loading) {
     return (
