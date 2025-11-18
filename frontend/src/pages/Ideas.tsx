@@ -6,6 +6,7 @@ import { fetchCategories } from '../store/categoriesSlice';
 import IdeaCard from '../components/ideas/IdeaCard';
 import AdvancedFilters from '../components/search/AdvancedFilters';
 import { MagnifyingGlassIcon, FunnelIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { useDebounce } from '../hooks/useDebounce';
 import type { IdeaStatus } from '../types';
 
 const Ideas = () => {
@@ -17,9 +18,28 @@ const Ideas = () => {
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   const [showFilters, setShowFilters] = useState(false);
 
+  // Debounce search query to avoid excessive API calls
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
+
   useEffect(() => {
     dispatch(fetchCategories());
   }, [dispatch]);
+
+  // Auto-search with debouncing when user types
+  useEffect(() => {
+    // Only trigger auto-search if there's a meaningful change
+    const currentSearch = searchParams.get('search') || '';
+    if (debouncedSearchQuery !== currentSearch) {
+      if (debouncedSearchQuery.trim()) {
+        setSearchParams({ ...Object.fromEntries(searchParams), search: debouncedSearchQuery });
+      } else if (currentSearch) {
+        // Clear search if query is empty
+        const params = Object.fromEntries(searchParams);
+        delete params.search;
+        setSearchParams(params);
+      }
+    }
+  }, [debouncedSearchQuery]);
 
   useEffect(() => {
     const categoryId = searchParams.get('category');
