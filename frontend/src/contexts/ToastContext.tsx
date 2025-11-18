@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
+import type { ReactNode } from 'react';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -20,6 +21,10 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
+  const hideToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((toast) => toast.id !== id));
+  }, []);
+
   const showToast = useCallback((type: ToastType, message: string, duration: number = 5000) => {
     const id = `toast-${Date.now()}-${Math.random()}`;
     const newToast: Toast = { id, type, message, duration };
@@ -32,11 +37,7 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         hideToast(id);
       }, duration);
     }
-  }, []);
-
-  const hideToast = useCallback((id: string) => {
-    setToasts((prev) => prev.filter((toast) => toast.id !== id));
-  }, []);
+  }, [hideToast]);
 
   return (
     <ToastContext.Provider value={{ toasts, showToast, hideToast }}>

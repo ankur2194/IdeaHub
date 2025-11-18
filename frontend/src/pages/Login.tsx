@@ -27,7 +27,7 @@ const Login = () => {
     try {
       await dispatch(login({ email, password })).unwrap();
       navigate('/dashboard');
-    } catch (err) {
+    } catch {
       // Error is handled by Redux slice
     }
   };

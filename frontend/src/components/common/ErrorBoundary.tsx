@@ -1,4 +1,5 @@
-import { Component, ReactNode, ErrorInfo } from 'react';
+import { Component } from 'react';
+import type { ReactNode, ErrorInfo } from 'react';
 
 interface Props {
   children: ReactNode;
@@ -20,7 +21,7 @@ class ErrorBoundary extends Component<Props, State> {
     };
   }
 
-  static getDerivedStateFromError(error: Error): Partial<State> {
+  static getDerivedStateFromError(): Partial<State> {
     return { hasError: true };
   }
 

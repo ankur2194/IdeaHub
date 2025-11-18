@@ -4,7 +4,7 @@ import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchIdeas, setFilters, likeIdea } from '../store/ideasSlice';
 import { fetchCategories } from '../store/categoriesSlice';
 import IdeaCard from '../components/ideas/IdeaCard';
-import AdvancedFilters from '../components/search/AdvancedFilters';
+import AdvancedFilters, { type FilterParams } from '../components/search/AdvancedFilters';
 import { MagnifyingGlassIcon, FunnelIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { useDebounce } from '../hooks/useDebounce';
 import type { IdeaStatus } from '../types';
@@ -75,7 +75,7 @@ const Ideas = () => {
     }
   };
 
-  const handleFilterChange = (newFilters: any) => {
+  const handleFilterChange = (newFilters: FilterParams) => {
     const params: Record<string, string> = {};
 
     // Preserve existing search query

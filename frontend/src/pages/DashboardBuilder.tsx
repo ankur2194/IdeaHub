@@ -73,28 +73,49 @@ const widgetTypes = [
 ];
 
 export const DashboardBuilder: React.FC = () => {
-  const [widgets, setWidgets] = useState<Widget[]>([]);
-  const [layouts, setLayouts] = useState<{ [key: string]: Layout[] }>({});
-  const [dashboardData, setDashboardData] = useState<DashboardData>({});
-  const [showWidgetLibrary, setShowWidgetLibrary] = useState(false);
-  const [dashboardName, setDashboardName] = useState('My Dashboard');
-
-  // Load dashboard from localStorage on mount
-  useEffect(() => {
+  // Initialize state from localStorage using lazy initializer
+  const [widgets, setWidgets] = useState<Widget[]>(() => {
     const savedDashboard = localStorage.getItem('dashboard');
     if (savedDashboard) {
       try {
         const dashboard: Dashboard = JSON.parse(savedDashboard);
-        setWidgets(dashboard.widgets);
-        setDashboardName(dashboard.name);
-        // Convert widgets layout to react-grid-layout format
-        const layoutItems = dashboard.widgets.map(w => w.layout);
-        setLayouts({ lg: layoutItems });
-      } catch (error) {
-        console.error('Failed to load dashboard:', error);
+        return dashboard.widgets;
+      } catch {
+        return [];
       }
     }
-  }, []);
+    return [];
+  });
+
+  const [layouts, setLayouts] = useState<{ [key: string]: Layout[] }>(() => {
+    const savedDashboard = localStorage.getItem('dashboard');
+    if (savedDashboard) {
+      try {
+        const dashboard: Dashboard = JSON.parse(savedDashboard);
+        const layoutItems = dashboard.widgets.map(w => w.layout);
+        return { lg: layoutItems };
+      } catch {
+        return { lg: [] };
+      }
+    }
+    return { lg: [] };
+  });
+
+  const [dashboardData, setDashboardData] = useState<DashboardData>({});
+  const [showWidgetLibrary, setShowWidgetLibrary] = useState(false);
+
+  const [dashboardName, setDashboardName] = useState<string>(() => {
+    const savedDashboard = localStorage.getItem('dashboard');
+    if (savedDashboard) {
+      try {
+        const dashboard: Dashboard = JSON.parse(savedDashboard);
+        return dashboard.name;
+      } catch {
+        return 'My Dashboard';
+      }
+    }
+    return 'My Dashboard';
+  });
 
   // Fetch data for widgets (simulated with sample data)
   useEffect(() => {
@@ -232,7 +253,7 @@ export const DashboardBuilder: React.FC = () => {
         const layoutItems = dashboard.widgets.map(w => w.layout);
         setLayouts({ lg: layoutItems });
         alert('Dashboard imported successfully!');
-      } catch (error) {
+      } catch {
         alert('Failed to import dashboard. Please check the file format.');
       }
     };
