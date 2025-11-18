@@ -13,41 +13,46 @@ import IdeaDetail from './pages/IdeaDetail';
 import CreateIdea from './pages/CreateIdea';
 import Analytics from './pages/Analytics';
 import Profile from './pages/Profile';
+import { ToastProvider } from './contexts/ToastContext';
+import { ToastContainer } from './components/common/Toast';
 
 function App() {
   return (
     <ErrorBoundary>
       <Provider store={store}>
-        <BrowserRouter>
-          <Routes>
-            {/* Public routes */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+        <ToastProvider>
+          <BrowserRouter>
+            <Routes>
+              {/* Public routes */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
 
-            {/* Protected routes */}
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <MainLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<Navigate to="/dashboard" replace />} />
-              <Route path="dashboard" element={<Dashboard />} />
-              <Route path="analytics" element={<Analytics />} />
-              <Route path="profile" element={<Profile />} />
-              <Route path="ideas" element={<Ideas />} />
-              <Route path="ideas/my" element={<MyIdeas />} />
-              <Route path="ideas/create" element={<CreateIdea />} />
-              <Route path="ideas/:id" element={<IdeaDetail />} />
-              <Route path="ideas/:id/edit" element={<CreateIdea />} />
-            </Route>
+              {/* Protected routes */}
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <MainLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<Navigate to="/dashboard" replace />} />
+                <Route path="dashboard" element={<Dashboard />} />
+                <Route path="analytics" element={<Analytics />} />
+                <Route path="profile" element={<Profile />} />
+                <Route path="ideas" element={<Ideas />} />
+                <Route path="ideas/my" element={<MyIdeas />} />
+                <Route path="ideas/create" element={<CreateIdea />} />
+                <Route path="ideas/:id" element={<IdeaDetail />} />
+                <Route path="ideas/:id/edit" element={<CreateIdea />} />
+              </Route>
 
-            {/* Catch all */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
-        </BrowserRouter>
+              {/* Catch all */}
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Routes>
+            <ToastContainer />
+          </BrowserRouter>
+        </ToastProvider>
       </Provider>
     </ErrorBoundary>
   );

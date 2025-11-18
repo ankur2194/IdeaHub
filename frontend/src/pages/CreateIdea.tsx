@@ -5,10 +5,12 @@ import { createIdea } from '../store/ideasSlice';
 import { fetchCategories } from '../store/categoriesSlice';
 import { fetchTags } from '../store/tagsSlice';
 import { FileUpload } from '../components/FileUpload';
+import { useToast } from '../contexts/ToastContext';
 
 const CreateIdea = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const { showToast } = useToast();
   const { loading, error } = useAppSelector((state) => state.ideas);
   const { categories } = useAppSelector((state) => state.categories);
   const { tags } = useAppSelector((state) => state.tags);
@@ -65,9 +67,12 @@ const CreateIdea = () => {
 
       // FormData is already a valid type for createIdea thunk
       await dispatch(createIdea(submitData)).unwrap();
+      showToast('success', 'Idea created successfully! It has been saved as a draft.');
       navigate('/ideas');
     } catch (err) {
-      // Error is handled by Redux slice
+      // Show error toast instead of relying on Redux error state alone
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create idea. Please try again.';
+      showToast('error', errorMessage);
     }
   };
 
