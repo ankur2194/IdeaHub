@@ -52,7 +52,6 @@ class GamificationService
 
             Log::info('User leveled up', [
                 'user_id' => $user->id,
-                'user_email' => $user->email,
                 'old_level' => $oldLevel,
                 'new_level' => $user->level,
                 'new_rank' => $user->rank,
@@ -181,7 +180,6 @@ class GamificationService
 
         Log::info('Badge earned', [
             'user_id' => $user->id,
-            'user_email' => $user->email,
             'badge_id' => $badge->id,
             'badge_name' => $badge->name,
             'badge_slug' => $badge->slug,

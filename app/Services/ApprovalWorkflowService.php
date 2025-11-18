@@ -192,7 +192,6 @@ class ApprovalWorkflowService
                 'idea_id' => $idea->id,
                 'idea_title' => $idea->title,
                 'approver_id' => $approval->approver_id,
-                'approver_email' => $approval->approver->email ?? null,
                 'level' => $approval->level,
                 'action' => $action,
                 'has_notes' => !empty($notes),
