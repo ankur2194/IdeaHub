@@ -27,7 +27,11 @@ class ApprovalController extends Controller
             $query->where('status', $request->status);
         }
 
-        $approvals = $query->latest()->paginate($request->get('per_page', 15));
+        // Validate pagination limit to prevent excessive resource usage
+        $perPage = $request->integer('per_page', 15);
+        $perPage = max(1, min($perPage, 100)); // Clamp between 1 and 100
+
+        $approvals = $query->latest()->paginate($perPage);
 
         return response()->json([
             'success' => true,

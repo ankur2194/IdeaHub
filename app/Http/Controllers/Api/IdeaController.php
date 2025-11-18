@@ -17,7 +17,7 @@ class IdeaController extends Controller
     /**
      * Display a listing of ideas.
      */
-    public function index(Request $request)
+    public function index(Request $request): \Illuminate\Http\JsonResponse
     {
         $query = Idea::with(['user', 'category', 'tags'])
             ->withCount(['comments', 'approvals']);
@@ -74,7 +74,11 @@ class IdeaController extends Controller
             $query->orderBy('created_at', 'desc');
         }
 
-        $ideas = $query->paginate($request->get('per_page', 15));
+        // Validate pagination limit to prevent excessive resource usage
+        $perPage = $request->integer('per_page', 15);
+        $perPage = max(1, min($perPage, 100)); // Clamp between 1 and 100
+
+        $ideas = $query->paginate($perPage);
 
         // Add 'liked' attribute to each idea (optimized to prevent N+1 query)
         if (Auth::check()) {
@@ -347,29 +351,16 @@ class IdeaController extends Controller
     /**
      * Like or unlike an idea.
      */
-    public function like(Idea $idea, PointsService $pointsService, \App\Services\GamificationService $gamificationService)
+    public function like(Idea $idea, \App\Services\LikeService $likeService, PointsService $pointsService, \App\Services\GamificationService $gamificationService)
     {
         $user = Auth::user();
 
-        // Check if user already liked this idea
-        if ($idea->likedBy()->where('user_id', $user->id)->exists()) {
-            // Unlike: remove the like
-            $idea->likedBy()->detach($user->id);
-            $idea->decrement('likes_count');
+        // Use LikeService to handle like/unlike logic
+        $result = $likeService->likeIdea($idea, $user->id);
 
-            // Deduct points from idea author
-            if ($idea->user) {
-                $pointsService->deductLikeRemoved($idea->user);
-            }
-
-            $liked = false;
-            $message = 'Idea unliked';
-        } else {
-            // Like: add the like
-            $idea->likedBy()->attach($user->id);
-            $idea->increment('likes_count');
-
-            // Award points to idea author
+        // Award/deduct points and gamification XP
+        if ($result['liked']) {
+            // Like: award points to idea author
             if ($idea->user) {
                 $pointsService->awardLikeReceived($idea->user);
                 $gamificationService->trackLikeReceived($idea->user);
@@ -379,7 +370,16 @@ class IdeaController extends Controller
             $gamificationService->trackLikeGiven($user);
 
             $liked = true;
-            $message = 'Idea liked (+2 XP)';
+            $message = $result['message'];
+        } else {
+            // Unlike: deduct points from idea author
+            // Note: XP is not deducted as it's a progression system
+            if ($idea->user) {
+                $pointsService->deductLikeRemoved($idea->user);
+            }
+
+            $liked = false;
+            $message = $result['message'];
         }
 
         return response()->json([
@@ -387,7 +387,7 @@ class IdeaController extends Controller
             'message' => $message,
             'data' => [
                 'liked' => $liked,
-                'likes_count' => $idea->likes_count,
+                'likes_count' => $result['likes_count'],
             ],
         ]);
     }

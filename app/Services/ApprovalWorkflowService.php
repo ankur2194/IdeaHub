@@ -11,6 +11,16 @@ use Illuminate\Support\Facades\DB;
 
 class ApprovalWorkflowService
 {
+    // Approval status constants
+    public const STATUS_PENDING = 'pending';
+    public const STATUS_APPROVED = 'approved';
+    public const STATUS_REJECTED = 'rejected';
+
+    // Idea status constants
+    public const IDEA_STATUS_REJECTED = 'rejected';
+    public const IDEA_STATUS_APPROVED = 'approved';
+    public const IDEA_STATUS_UNDER_REVIEW = 'under_review';
+
     /**
      * Initialize approval workflow for an idea.
      */
@@ -90,7 +100,7 @@ class ApprovalWorkflowService
                         'idea_id' => $idea->id,
                         'approver_id' => $approver->id,
                         'level' => $level,
-                        'status' => 'pending',
+                        'status' => self::STATUS_PENDING,
                     ]);
                     $approvals->push($approval);
                 }
@@ -103,7 +113,7 @@ class ApprovalWorkflowService
                         'idea_id' => $idea->id,
                         'approver_id' => $approverId,
                         'level' => $level,
-                        'status' => 'pending',
+                        'status' => self::STATUS_PENDING,
                     ]);
                     $approvals->push($approval);
                 }
@@ -128,7 +138,7 @@ class ApprovalWorkflowService
                 'idea_id' => $idea->id,
                 'approver_id' => $approver->id,
                 'level' => 1,
-                'status' => 'pending',
+                'status' => self::STATUS_PENDING,
             ]);
             $approvals->push($approval);
         }
@@ -146,7 +156,7 @@ class ApprovalWorkflowService
             $approval = Approval::lockForUpdate()->findOrFail($approval->id);
 
             // Check if already processed
-            if ($approval->status !== 'pending') {
+            if ($approval->status !== self::STATUS_PENDING) {
                 throw new \Exception('This approval has already been processed.');
             }
 
@@ -156,18 +166,18 @@ class ApprovalWorkflowService
             $approval->update([
                 'status' => $action,
                 'notes' => $notes,
-                $action === 'approved' ? 'approved_at' : 'rejected_at' => now(),
+                $action === self::STATUS_APPROVED ? 'approved_at' : 'rejected_at' => now(),
             ]);
 
-            if ($action === 'rejected') {
+            if ($action === self::STATUS_REJECTED) {
             // If rejected, reject the entire idea
             $idea->update([
-                'status' => 'rejected',
+                'status' => self::IDEA_STATUS_REJECTED,
                 'rejected_at' => now(),
             ]);
 
             return [
-                'final_status' => 'rejected',
+                'final_status' => self::IDEA_STATUS_REJECTED,
                 'next_level' => null,
                 'pending_approvals' => [],
             ];
@@ -179,17 +189,17 @@ class ApprovalWorkflowService
             ->where('level', $currentLevel)
             ->get();
 
-        $allApproved = $levelApprovals->every(fn($a) => $a->status === 'approved');
-        $anyRejected = $levelApprovals->contains(fn($a) => $a->status === 'rejected');
+        $allApproved = $levelApprovals->every(fn($a) => $a->status === self::STATUS_APPROVED);
+        $anyRejected = $levelApprovals->contains(fn($a) => $a->status === self::STATUS_REJECTED);
 
         if ($anyRejected) {
             $idea->update([
-                'status' => 'rejected',
+                'status' => self::IDEA_STATUS_REJECTED,
                 'rejected_at' => now(),
             ]);
 
             return [
-                'final_status' => 'rejected',
+                'final_status' => self::IDEA_STATUS_REJECTED,
                 'next_level' => null,
                 'pending_approvals' => [],
             ];
@@ -198,9 +208,9 @@ class ApprovalWorkflowService
         if (!$allApproved) {
             // Still waiting for other approvals at this level
             return [
-                'final_status' => 'pending',
+                'final_status' => self::STATUS_PENDING,
                 'next_level' => $currentLevel,
-                'pending_approvals' => $levelApprovals->where('status', 'pending'),
+                'pending_approvals' => $levelApprovals->where('status', self::STATUS_PENDING),
             ];
         }
 
@@ -213,19 +223,19 @@ class ApprovalWorkflowService
         if ($nextLevelApprovals->isEmpty()) {
             // No more levels, idea is fully approved
             $idea->update([
-                'status' => 'approved',
+                'status' => self::IDEA_STATUS_APPROVED,
                 'approved_at' => now(),
             ]);
 
             return [
-                'final_status' => 'approved',
+                'final_status' => self::IDEA_STATUS_APPROVED,
                 'next_level' => null,
                 'pending_approvals' => [],
             ];
         }
 
         // Move to next level
-        $idea->update(['status' => 'under_review']);
+        $idea->update(['status' => self::IDEA_STATUS_UNDER_REVIEW]);
 
             return [
                 'final_status' => 'under_review',
