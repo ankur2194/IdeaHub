@@ -84,7 +84,7 @@ class CommentResolver
         $comment = Comment::findOrFail($args['id']);
 
         // Check authorization
-        if ($comment->user_id !== $user->id && !$user->isAdmin()) {
+        if ($comment->user_id !== $user->id && ! $user->isAdmin()) {
             throw new \Exception('Unauthorized to delete this comment.');
         }
 
@@ -155,7 +155,7 @@ class CommentResolver
         $comment = Comment::findOrFail($args['comment_id']);
 
         // Check if not liked
-        if (!$comment->likedBy()->where('users.id', $user->id)->exists()) {
+        if (! $comment->likedBy()->where('users.id', $user->id)->exists()) {
             throw new \Exception('You have not liked this comment.');
         }
 

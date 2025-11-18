@@ -20,16 +20,13 @@ class TeamsService
 
     /**
      * Test Microsoft Teams webhook connection.
-     *
-     * @param array $config
-     * @return bool
      */
     public function testConnection(array $config): bool
     {
         try {
             $webhookUrl = $config['webhook_url'] ?? null;
 
-            if (!$webhookUrl) {
+            if (! $webhookUrl) {
                 return false;
             }
 
@@ -66,25 +63,21 @@ class TeamsService
 
             return $response->getStatusCode() === 200;
         } catch (GuzzleException $e) {
-            Log::error('Teams connection test failed: ' . $e->getMessage());
+            Log::error('Teams connection test failed: '.$e->getMessage());
+
             return false;
         }
     }
 
     /**
      * Send a notification to Microsoft Teams.
-     *
-     * @param array $config
-     * @param string $message
-     * @param array $data
-     * @return void
      */
     public function sendNotification(array $config, string $message, array $data = []): void
     {
         try {
             $webhookUrl = $config['webhook_url'] ?? null;
 
-            if (!$webhookUrl) {
+            if (! $webhookUrl) {
                 throw new \Exception('Teams webhook URL not configured');
             }
 
@@ -94,23 +87,18 @@ class TeamsService
                 'json' => $card,
             ]);
         } catch (GuzzleException $e) {
-            Log::error('Failed to send Teams notification: ' . $e->getMessage());
+            Log::error('Failed to send Teams notification: '.$e->getMessage());
             throw $e;
         }
     }
 
     /**
      * Post an Adaptive Card to Microsoft Teams.
-     *
-     * @param array $config
-     * @param string $webhookUrl
-     * @param array $card
-     * @return void
      */
     public function postAdaptiveCard(array $config, string $webhookUrl, array $card): void
     {
         try {
-            if (!$webhookUrl) {
+            if (! $webhookUrl) {
                 throw new \Exception('Teams webhook URL not provided');
             }
 
@@ -122,17 +110,13 @@ class TeamsService
                 throw new \Exception('Failed to post Adaptive Card to Teams');
             }
         } catch (GuzzleException $e) {
-            Log::error('Failed to post Adaptive Card to Teams: ' . $e->getMessage());
+            Log::error('Failed to post Adaptive Card to Teams: '.$e->getMessage());
             throw $e;
         }
     }
 
     /**
      * Handle idea created event.
-     *
-     * @param Integration $integration
-     * @param Idea $idea
-     * @return void
      */
     public function handleIdeaCreated(Integration $integration, Idea $idea): void
     {
@@ -140,7 +124,7 @@ class TeamsService
             $config = $integration->config;
             $webhookUrl = $config['webhook_url'] ?? null;
 
-            if (!$webhookUrl) {
+            if (! $webhookUrl) {
                 throw new \Exception('Teams webhook URL not configured');
             }
 
@@ -216,16 +200,12 @@ class TeamsService
             $this->logError($integration, 'idea_created', $e->getMessage(), [
                 'idea_id' => $idea->id,
             ]);
-            Log::error('Failed to handle Teams idea created event: ' . $e->getMessage());
+            Log::error('Failed to handle Teams idea created event: '.$e->getMessage());
         }
     }
 
     /**
      * Handle idea approved event.
-     *
-     * @param Integration $integration
-     * @param Idea $idea
-     * @return void
      */
     public function handleIdeaApproved(Integration $integration, Idea $idea): void
     {
@@ -233,7 +213,7 @@ class TeamsService
             $config = $integration->config;
             $webhookUrl = $config['webhook_url'] ?? null;
 
-            if (!$webhookUrl) {
+            if (! $webhookUrl) {
                 throw new \Exception('Teams webhook URL not configured');
             }
 
@@ -305,16 +285,12 @@ class TeamsService
             $this->logError($integration, 'idea_approved', $e->getMessage(), [
                 'idea_id' => $idea->id,
             ]);
-            Log::error('Failed to handle Teams idea approved event: ' . $e->getMessage());
+            Log::error('Failed to handle Teams idea approved event: '.$e->getMessage());
         }
     }
 
     /**
      * Build a simple Adaptive Card.
-     *
-     * @param string $message
-     * @param array $data
-     * @return array
      */
     protected function buildSimpleCard(string $message, array $data = []): array
     {
@@ -328,11 +304,11 @@ class TeamsService
             ],
         ];
 
-        if (!empty($data)) {
+        if (! empty($data)) {
             $facts = [];
             foreach ($data as $key => $value) {
                 $facts[] = [
-                    'title' => ucfirst(str_replace('_', ' ', $key)) . ':',
+                    'title' => ucfirst(str_replace('_', ' ', $key)).':',
                     'value' => (string) $value,
                 ];
             }
@@ -361,11 +337,6 @@ class TeamsService
 
     /**
      * Log a successful integration action.
-     *
-     * @param Integration $integration
-     * @param string $action
-     * @param array $payload
-     * @return void
      */
     protected function logSuccess(Integration $integration, string $action, array $payload = []): void
     {
@@ -381,12 +352,6 @@ class TeamsService
 
     /**
      * Log a failed integration action.
-     *
-     * @param Integration $integration
-     * @param string $action
-     * @param string $errorMessage
-     * @param array $payload
-     * @return void
      */
     protected function logError(Integration $integration, string $action, string $errorMessage, array $payload = []): void
     {

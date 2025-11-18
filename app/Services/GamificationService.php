@@ -2,23 +2,29 @@
 
 namespace App\Services;
 
-use App\Models\Badge;
-use App\Models\User;
-use App\Models\Notification;
 use App\Events\BadgeEarned;
-use App\Events\UserLeveledUp;
 use App\Events\NewNotification;
+use App\Events\UserLeveledUp;
+use App\Models\Badge;
+use App\Models\Notification;
+use App\Models\User;
 use Illuminate\Support\Facades\Log;
 
 class GamificationService
 {
     // XP values for different actions
     const XP_IDEA_SUBMITTED = 20;
+
     const XP_IDEA_APPROVED = 100;
+
     const XP_IDEA_IMPLEMENTED = 200;
+
     const XP_COMMENT_CREATED = 10;
+
     const XP_LIKE_RECEIVED = 5;
+
     const XP_LIKE_GIVEN = 2;
+
     const XP_BADGE_EARNED = 50;
 
     /**

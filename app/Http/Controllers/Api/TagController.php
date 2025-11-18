@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Tag;
 use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
@@ -73,7 +72,7 @@ class TagController extends Controller
     public function update(Request $request, Tag $tag)
     {
         // Only admins can update tags
-        if (!Auth::user()->isAdmin()) {
+        if (! Auth::user()->isAdmin()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized to update tags',
@@ -81,7 +80,7 @@ class TagController extends Controller
         }
 
         $validated = $request->validate([
-            'name' => 'sometimes|required|string|max:255|unique:tags,name,' . $tag->id,
+            'name' => 'sometimes|required|string|max:255|unique:tags,name,'.$tag->id,
             'color' => 'nullable|string|size:7|regex:/^#[0-9A-Fa-f]{6}$/',
         ]);
 
@@ -104,7 +103,7 @@ class TagController extends Controller
     public function destroy(Tag $tag)
     {
         // Only admins can delete tags
-        if (!Auth::user()->isAdmin()) {
+        if (! Auth::user()->isAdmin()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized to delete tags',

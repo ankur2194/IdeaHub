@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\TenantBranding;
 use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -19,7 +18,7 @@ class BrandingController extends Controller
     {
         $tenant = app('current_tenant');
 
-        if (!$tenant) {
+        if (! $tenant) {
             return response()->json([
                 'success' => false,
                 'message' => 'No tenant context found',
@@ -28,7 +27,7 @@ class BrandingController extends Controller
 
         $branding = $tenant->branding;
 
-        if (!$branding) {
+        if (! $branding) {
             // Return default branding if none exists
             return response()->json([
                 'success' => true,
@@ -59,7 +58,7 @@ class BrandingController extends Controller
         $user = $request->user();
 
         // Check if user is admin
-        if (!$user || !$user->isAdmin()) {
+        if (! $user || ! $user->isAdmin()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized. Only administrators can update branding.',
@@ -68,7 +67,7 @@ class BrandingController extends Controller
 
         $tenant = app('current_tenant');
 
-        if (!$tenant) {
+        if (! $tenant) {
             return response()->json([
                 'success' => false,
                 'message' => 'No tenant context found',
@@ -115,7 +114,7 @@ class BrandingController extends Controller
         // Get or create branding
         $branding = $tenant->branding;
 
-        if (!$branding) {
+        if (! $branding) {
             $branding = new TenantBranding(['tenant_id' => $tenant->id]);
         }
 
@@ -166,7 +165,7 @@ class BrandingController extends Controller
         $user = $request->user();
 
         // Check if user is admin
-        if (!$user || !$user->isAdmin()) {
+        if (! $user || ! $user->isAdmin()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized. Only administrators can upload logos.',
@@ -175,7 +174,7 @@ class BrandingController extends Controller
 
         $tenant = app('current_tenant');
 
-        if (!$tenant) {
+        if (! $tenant) {
             return response()->json([
                 'success' => false,
                 'message' => 'No tenant context found',
@@ -218,14 +217,14 @@ class BrandingController extends Controller
         }
 
         // Store the file
-        $filename = $type . '_' . time() . '.' . $file->getClientOriginalExtension();
+        $filename = $type.'_'.time().'.'.$file->getClientOriginalExtension();
         $path = $file->storeAs($directory, $filename, 'public');
 
         // Generate URL
         $url = Storage::url($path);
 
         // Get or create branding
-        if (!$branding) {
+        if (! $branding) {
             $branding = new TenantBranding(['tenant_id' => $tenant->id]);
         }
 
@@ -249,7 +248,7 @@ class BrandingController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => ucfirst(str_replace('_', ' ', $type)) . ' uploaded successfully',
+            'message' => ucfirst(str_replace('_', ' ', $type)).' uploaded successfully',
             'data' => [
                 'url' => $url,
                 'type' => $type,
@@ -266,7 +265,7 @@ class BrandingController extends Controller
         $user = $request->user();
 
         // Check if user is admin
-        if (!$user || !$user->isAdmin()) {
+        if (! $user || ! $user->isAdmin()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized. Only administrators can delete logos.',
@@ -275,7 +274,7 @@ class BrandingController extends Controller
 
         $tenant = app('current_tenant');
 
-        if (!$tenant) {
+        if (! $tenant) {
             return response()->json([
                 'success' => false,
                 'message' => 'No tenant context found',
@@ -297,7 +296,7 @@ class BrandingController extends Controller
 
         $branding = $tenant->branding;
 
-        if (!$branding) {
+        if (! $branding) {
             return response()->json([
                 'success' => false,
                 'message' => 'No branding configuration found',
@@ -321,7 +320,7 @@ class BrandingController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => ucfirst(str_replace('_', ' ', $type)) . ' deleted successfully',
+            'message' => ucfirst(str_replace('_', ' ', $type)).' deleted successfully',
             'data' => [
                 'branding' => $branding->fresh(),
             ],
@@ -336,7 +335,7 @@ class BrandingController extends Controller
         $user = $request->user();
 
         // Check if user is admin
-        if (!$user || !$user->isAdmin()) {
+        if (! $user || ! $user->isAdmin()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized. Only administrators can reset branding.',
@@ -345,7 +344,7 @@ class BrandingController extends Controller
 
         $tenant = app('current_tenant');
 
-        if (!$tenant) {
+        if (! $tenant) {
             return response()->json([
                 'success' => false,
                 'message' => 'No tenant context found',
@@ -354,7 +353,7 @@ class BrandingController extends Controller
 
         $branding = $tenant->branding;
 
-        if (!$branding) {
+        if (! $branding) {
             return response()->json([
                 'success' => false,
                 'message' => 'No branding configuration to reset',

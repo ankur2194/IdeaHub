@@ -14,12 +14,16 @@ class ApprovalWorkflowService
 {
     // Approval status constants
     public const STATUS_PENDING = 'pending';
+
     public const STATUS_APPROVED = 'approved';
+
     public const STATUS_REJECTED = 'rejected';
 
     // Idea status constants
     public const IDEA_STATUS_REJECTED = 'rejected';
+
     public const IDEA_STATUS_APPROVED = 'approved';
+
     public const IDEA_STATUS_UNDER_REVIEW = 'under_review';
 
     /**
@@ -29,7 +33,7 @@ class ApprovalWorkflowService
     {
         $workflow = $this->determineWorkflow($idea);
 
-        if (!$workflow) {
+        if (! $workflow) {
             // No workflow found, use default single-level approval
             Log::info('Initializing default approval workflow', [
                 'idea_id' => $idea->id,
@@ -108,7 +112,7 @@ class ApprovalWorkflowService
             $requireAll = $levelData['require_all'] ?? false;
 
             // Get approvers by roles
-            if (!empty($approverRoles)) {
+            if (! empty($approverRoles)) {
                 $roleApprovers = User::whereIn('role', $approverRoles)
                     ->where('is_active', true)
                     ->get();
@@ -125,7 +129,7 @@ class ApprovalWorkflowService
             }
 
             // Get specific approvers by ID
-            if (!empty($approverIds)) {
+            if (! empty($approverIds)) {
                 foreach ($approverIds as $approverId) {
                     $approval = Approval::create([
                         'idea_id' => $idea->id,
@@ -194,7 +198,7 @@ class ApprovalWorkflowService
                 'approver_id' => $approval->approver_id,
                 'level' => $approval->level,
                 'action' => $action,
-                'has_notes' => !empty($notes),
+                'has_notes' => ! empty($notes),
                 'tenant_id' => $idea->tenant_id,
             ]);
 
@@ -206,91 +210,91 @@ class ApprovalWorkflowService
             ]);
 
             if ($action === self::STATUS_REJECTED) {
-            // If rejected, reject the entire idea
-            $idea->update([
-                'status' => self::IDEA_STATUS_REJECTED,
-                'rejected_at' => now(),
-            ]);
+                // If rejected, reject the entire idea
+                $idea->update([
+                    'status' => self::IDEA_STATUS_REJECTED,
+                    'rejected_at' => now(),
+                ]);
 
-            Log::warning('Idea rejected', [
-                'idea_id' => $idea->id,
-                'idea_title' => $idea->title,
-                'author_id' => $idea->user_id,
-                'approver_id' => $approval->approver_id,
-                'level' => $approval->level,
-                'rejection_notes' => $notes,
-                'tenant_id' => $idea->tenant_id,
-            ]);
+                Log::warning('Idea rejected', [
+                    'idea_id' => $idea->id,
+                    'idea_title' => $idea->title,
+                    'author_id' => $idea->user_id,
+                    'approver_id' => $approval->approver_id,
+                    'level' => $approval->level,
+                    'rejection_notes' => $notes,
+                    'tenant_id' => $idea->tenant_id,
+                ]);
 
-            return [
-                'final_status' => self::IDEA_STATUS_REJECTED,
-                'next_level' => null,
-                'pending_approvals' => [],
-            ];
-        }
+                return [
+                    'final_status' => self::IDEA_STATUS_REJECTED,
+                    'next_level' => null,
+                    'pending_approvals' => [],
+                ];
+            }
 
-        // Check if this level is complete
-        $currentLevel = $approval->level;
-        $levelApprovals = Approval::where('idea_id', $idea->id)
-            ->where('level', $currentLevel)
-            ->get();
+            // Check if this level is complete
+            $currentLevel = $approval->level;
+            $levelApprovals = Approval::where('idea_id', $idea->id)
+                ->where('level', $currentLevel)
+                ->get();
 
-        $allApproved = $levelApprovals->every(fn($a) => $a->status === self::STATUS_APPROVED);
-        $anyRejected = $levelApprovals->contains(fn($a) => $a->status === self::STATUS_REJECTED);
+            $allApproved = $levelApprovals->every(fn ($a) => $a->status === self::STATUS_APPROVED);
+            $anyRejected = $levelApprovals->contains(fn ($a) => $a->status === self::STATUS_REJECTED);
 
-        if ($anyRejected) {
-            $idea->update([
-                'status' => self::IDEA_STATUS_REJECTED,
-                'rejected_at' => now(),
-            ]);
+            if ($anyRejected) {
+                $idea->update([
+                    'status' => self::IDEA_STATUS_REJECTED,
+                    'rejected_at' => now(),
+                ]);
 
-            return [
-                'final_status' => self::IDEA_STATUS_REJECTED,
-                'next_level' => null,
-                'pending_approvals' => [],
-            ];
-        }
+                return [
+                    'final_status' => self::IDEA_STATUS_REJECTED,
+                    'next_level' => null,
+                    'pending_approvals' => [],
+                ];
+            }
 
-        if (!$allApproved) {
-            // Still waiting for other approvals at this level
-            return [
-                'final_status' => self::STATUS_PENDING,
-                'next_level' => $currentLevel,
-                'pending_approvals' => $levelApprovals->where('status', self::STATUS_PENDING),
-            ];
-        }
+            if (! $allApproved) {
+                // Still waiting for other approvals at this level
+                return [
+                    'final_status' => self::STATUS_PENDING,
+                    'next_level' => $currentLevel,
+                    'pending_approvals' => $levelApprovals->where('status', self::STATUS_PENDING),
+                ];
+            }
 
-        // Current level is complete, check for next level
-        $nextLevelApprovals = Approval::where('idea_id', $idea->id)
-            ->where('level', $currentLevel + 1)
-            ->pending()
-            ->get();
+            // Current level is complete, check for next level
+            $nextLevelApprovals = Approval::where('idea_id', $idea->id)
+                ->where('level', $currentLevel + 1)
+                ->pending()
+                ->get();
 
-        if ($nextLevelApprovals->isEmpty()) {
-            // No more levels, idea is fully approved
-            $idea->update([
-                'status' => self::IDEA_STATUS_APPROVED,
-                'approved_at' => now(),
-            ]);
+            if ($nextLevelApprovals->isEmpty()) {
+                // No more levels, idea is fully approved
+                $idea->update([
+                    'status' => self::IDEA_STATUS_APPROVED,
+                    'approved_at' => now(),
+                ]);
 
-            Log::info('Idea fully approved', [
-                'idea_id' => $idea->id,
-                'idea_title' => $idea->title,
-                'author_id' => $idea->user_id,
-                'final_approver_id' => $approval->approver_id,
-                'total_levels' => $currentLevel,
-                'tenant_id' => $idea->tenant_id,
-            ]);
+                Log::info('Idea fully approved', [
+                    'idea_id' => $idea->id,
+                    'idea_title' => $idea->title,
+                    'author_id' => $idea->user_id,
+                    'final_approver_id' => $approval->approver_id,
+                    'total_levels' => $currentLevel,
+                    'tenant_id' => $idea->tenant_id,
+                ]);
 
-            return [
-                'final_status' => self::IDEA_STATUS_APPROVED,
-                'next_level' => null,
-                'pending_approvals' => [],
-            ];
-        }
+                return [
+                    'final_status' => self::IDEA_STATUS_APPROVED,
+                    'next_level' => null,
+                    'pending_approvals' => [],
+                ];
+            }
 
-        // Move to next level
-        $idea->update(['status' => self::IDEA_STATUS_UNDER_REVIEW]);
+            // Move to next level
+            $idea->update(['status' => self::IDEA_STATUS_UNDER_REVIEW]);
 
             Log::info('Approval level complete, moving to next level', [
                 'idea_id' => $idea->id,

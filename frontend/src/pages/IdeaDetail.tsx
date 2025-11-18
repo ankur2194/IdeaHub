@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchIdea, likeIdea, deleteIdea, submitIdea } from '../store/ideasSlice';
@@ -36,6 +36,19 @@ const IdeaDetail = () => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [commentSubmitting, setCommentSubmitting] = useState(false);
+
+  const loadComments = useCallback(async () => {
+    if (!id) return;
+    setCommentsLoading(true);
+    try {
+      const response = await commentService.getComments(parseInt(id));
+      setComments(response.data);
+    } catch (error) {
+      console.error('Failed to load comments:', error);
+    } finally {
+      setCommentsLoading(false);
+    }
+  }, [id]);
 
   // Real-time updates for this idea
   useIdeaUpdates(
@@ -77,20 +90,7 @@ const IdeaDetail = () => {
       dispatch(fetchIdea(parseInt(id)));
       loadComments();
     }
-  }, [id, dispatch]);
-
-  const loadComments = async () => {
-    if (!id) return;
-    setCommentsLoading(true);
-    try {
-      const response = await commentService.getComments(parseInt(id));
-      setComments(response.data);
-    } catch (error) {
-      console.error('Failed to load comments:', error);
-    } finally {
-      setCommentsLoading(false);
-    }
-  };
+  }, [id, dispatch, loadComments]);
 
   const handleLike = () => {
     if (idea) {

@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class LikeService
@@ -11,10 +10,10 @@ class LikeService
     /**
      * Toggle like/unlike for a likeable model (Idea or Comment).
      *
-     * @param Model $model The model to like/unlike (must have likedBy relationship)
-     * @param int $userId The user ID performing the action
-     * @param string $relationshipTable The pivot table name (idea_likes or comment_likes)
-     * @param string $foreignKey The foreign key in pivot table (idea_id or comment_id)
+     * @param  Model  $model  The model to like/unlike (must have likedBy relationship)
+     * @param  int  $userId  The user ID performing the action
+     * @param  string  $relationshipTable  The pivot table name (idea_likes or comment_likes)
+     * @param  string  $foreignKey  The foreign key in pivot table (idea_id or comment_id)
      * @return array Result with liked status and new count
      */
     public function toggleLike(Model $model, int $userId, string $relationshipTable, string $foreignKey): array

@@ -20,16 +20,13 @@ class SlackService
 
     /**
      * Test Slack webhook/API connection.
-     *
-     * @param array $config
-     * @return bool
      */
     public function testConnection(array $config): bool
     {
         try {
             $webhookUrl = $config['webhook_url'] ?? null;
 
-            if (!$webhookUrl) {
+            if (! $webhookUrl) {
                 return false;
             }
 
@@ -41,25 +38,21 @@ class SlackService
 
             return $response->getStatusCode() === 200;
         } catch (GuzzleException $e) {
-            Log::error('Slack connection test failed: ' . $e->getMessage());
+            Log::error('Slack connection test failed: '.$e->getMessage());
+
             return false;
         }
     }
 
     /**
      * Send a notification to Slack.
-     *
-     * @param array $config
-     * @param string $message
-     * @param array $data
-     * @return void
      */
     public function sendNotification(array $config, string $message, array $data = []): void
     {
         try {
             $webhookUrl = $config['webhook_url'] ?? null;
 
-            if (!$webhookUrl) {
+            if (! $webhookUrl) {
                 throw new \Exception('Slack webhook URL not configured');
             }
 
@@ -72,30 +65,26 @@ class SlackService
                 'json' => $payload,
             ]);
         } catch (GuzzleException $e) {
-            Log::error('Failed to send Slack notification: ' . $e->getMessage());
+            Log::error('Failed to send Slack notification: '.$e->getMessage());
             throw $e;
         }
     }
 
     /**
      * Create a Slack channel.
-     *
-     * @param array $config
-     * @param string $name
-     * @return array
      */
     public function createChannel(array $config, string $name): array
     {
         try {
             $token = $config['bot_token'] ?? null;
 
-            if (!$token) {
+            if (! $token) {
                 throw new \Exception('Slack bot token not configured');
             }
 
             $response = $this->client->post('https://slack.com/api/conversations.create', [
                 'headers' => [
-                    'Authorization' => 'Bearer ' . $token,
+                    'Authorization' => 'Bearer '.$token,
                     'Content-Type' => 'application/json',
                 ],
                 'json' => [
@@ -106,32 +95,26 @@ class SlackService
 
             $result = json_decode($response->getBody()->getContents(), true);
 
-            if (!$result['ok']) {
+            if (! $result['ok']) {
                 throw new \Exception($result['error'] ?? 'Unknown error creating channel');
             }
 
             return $result['channel'];
         } catch (GuzzleException $e) {
-            Log::error('Failed to create Slack channel: ' . $e->getMessage());
+            Log::error('Failed to create Slack channel: '.$e->getMessage());
             throw $e;
         }
     }
 
     /**
      * Post a message to a Slack channel.
-     *
-     * @param array $config
-     * @param string $channel
-     * @param string $text
-     * @param array $attachments
-     * @return void
      */
     public function postMessage(array $config, string $channel, string $text, array $attachments = []): void
     {
         try {
             $token = $config['bot_token'] ?? null;
 
-            if (!$token) {
+            if (! $token) {
                 throw new \Exception('Slack bot token not configured');
             }
 
@@ -140,13 +123,13 @@ class SlackService
                 'text' => $text,
             ];
 
-            if (!empty($attachments)) {
+            if (! empty($attachments)) {
                 $payload['attachments'] = $attachments;
             }
 
             $response = $this->client->post('https://slack.com/api/chat.postMessage', [
                 'headers' => [
-                    'Authorization' => 'Bearer ' . $token,
+                    'Authorization' => 'Bearer '.$token,
                     'Content-Type' => 'application/json',
                 ],
                 'json' => $payload,
@@ -154,21 +137,17 @@ class SlackService
 
             $result = json_decode($response->getBody()->getContents(), true);
 
-            if (!$result['ok']) {
+            if (! $result['ok']) {
                 throw new \Exception($result['error'] ?? 'Unknown error posting message');
             }
         } catch (GuzzleException $e) {
-            Log::error('Failed to post message to Slack: ' . $e->getMessage());
+            Log::error('Failed to post message to Slack: '.$e->getMessage());
             throw $e;
         }
     }
 
     /**
      * Handle idea created event.
-     *
-     * @param Integration $integration
-     * @param Idea $idea
-     * @return void
      */
     public function handleIdeaCreated(Integration $integration, Idea $idea): void
     {
@@ -176,11 +155,11 @@ class SlackService
             $config = $integration->config;
             $webhookUrl = $config['webhook_url'] ?? null;
 
-            if (!$webhookUrl) {
+            if (! $webhookUrl) {
                 throw new \Exception('Slack webhook URL not configured');
             }
 
-            $message = "🎯 New Idea Submitted";
+            $message = '🎯 New Idea Submitted';
             $blocks = [
                 [
                     'type' => 'header',
@@ -206,7 +185,7 @@ class SlackService
                         ],
                         [
                             'type' => 'mrkdwn',
-                            'text' => "*Submitted By:*\n" . ($idea->is_anonymous ? 'Anonymous' : $idea->user->name),
+                            'text' => "*Submitted By:*\n".($idea->is_anonymous ? 'Anonymous' : $idea->user->name),
                         ],
                     ],
                 ],
@@ -243,16 +222,12 @@ class SlackService
             $this->logError($integration, 'idea_created', $e->getMessage(), [
                 'idea_id' => $idea->id,
             ]);
-            Log::error('Failed to handle Slack idea created event: ' . $e->getMessage());
+            Log::error('Failed to handle Slack idea created event: '.$e->getMessage());
         }
     }
 
     /**
      * Handle idea approved event.
-     *
-     * @param Integration $integration
-     * @param Idea $idea
-     * @return void
      */
     public function handleIdeaApproved(Integration $integration, Idea $idea): void
     {
@@ -260,11 +235,11 @@ class SlackService
             $config = $integration->config;
             $webhookUrl = $config['webhook_url'] ?? null;
 
-            if (!$webhookUrl) {
+            if (! $webhookUrl) {
                 throw new \Exception('Slack webhook URL not configured');
             }
 
-            $message = "✅ Idea Approved";
+            $message = '✅ Idea Approved';
             $blocks = [
                 [
                     'type' => 'header',
@@ -318,16 +293,12 @@ class SlackService
             $this->logError($integration, 'idea_approved', $e->getMessage(), [
                 'idea_id' => $idea->id,
             ]);
-            Log::error('Failed to handle Slack idea approved event: ' . $e->getMessage());
+            Log::error('Failed to handle Slack idea approved event: '.$e->getMessage());
         }
     }
 
     /**
      * Format message blocks for Slack.
-     *
-     * @param string $message
-     * @param array $data
-     * @return array
      */
     protected function formatMessageBlocks(string $message, array $data): array
     {
@@ -341,16 +312,16 @@ class SlackService
             ],
         ];
 
-        if (!empty($data)) {
+        if (! empty($data)) {
             $fields = [];
             foreach ($data as $key => $value) {
                 $fields[] = [
                     'type' => 'mrkdwn',
-                    'text' => "*" . ucfirst(str_replace('_', ' ', $key)) . ":*\n{$value}",
+                    'text' => '*'.ucfirst(str_replace('_', ' ', $key)).":*\n{$value}",
                 ];
             }
 
-            if (!empty($fields)) {
+            if (! empty($fields)) {
                 $blocks[] = [
                     'type' => 'section',
                     'fields' => $fields,
@@ -363,11 +334,6 @@ class SlackService
 
     /**
      * Log a successful integration action.
-     *
-     * @param Integration $integration
-     * @param string $action
-     * @param array $payload
-     * @return void
      */
     protected function logSuccess(Integration $integration, string $action, array $payload = []): void
     {
@@ -383,12 +349,6 @@ class SlackService
 
     /**
      * Log a failed integration action.
-     *
-     * @param Integration $integration
-     * @param string $action
-     * @param string $errorMessage
-     * @param array $payload
-     * @return void
      */
     protected function logError(Integration $integration, string $action, string $errorMessage, array $payload = []): void
     {

@@ -41,7 +41,7 @@ class NotificationFactory extends Factory
             'title' => fake()->sentence(),
             'message' => fake()->paragraph(),
             'data' => [
-                'action_url' => '/ideas/' . fake()->numberBetween(1, 100),
+                'action_url' => '/ideas/'.fake()->numberBetween(1, 100),
                 'related_id' => fake()->numberBetween(1, 100),
             ],
             'is_read' => false,

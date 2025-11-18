@@ -158,7 +158,7 @@ class IntegrationController extends Controller
      */
     public function test(Integration $integration): JsonResponse
     {
-        if (!$integration->isConfigured()) {
+        if (! $integration->isConfigured()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Integration is not properly configured',
@@ -206,7 +206,7 @@ class IntegrationController extends Controller
      */
     public function sync(Integration $integration): JsonResponse
     {
-        if (!$integration->isConfigured()) {
+        if (! $integration->isConfigured()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Integration is not properly configured',

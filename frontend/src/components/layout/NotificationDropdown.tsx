@@ -10,7 +10,7 @@ interface Notification {
   type: string;
   title: string;
   message: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   read: boolean;
   created_at: string;
 }
@@ -123,8 +123,9 @@ const NotificationDropdown: React.FC = () => {
   };
 
   const getNotificationLink = (notification: Notification) => {
-    if (notification.data.idea_id) {
-      return `/ideas/${notification.data.idea_id}`;
+    const data = notification.data as { idea_id?: number };
+    if (data.idea_id) {
+      return `/ideas/${data.idea_id}`;
     }
     if (notification.type === 'badge_earned' || notification.type === 'level_up') {
       return '/profile';

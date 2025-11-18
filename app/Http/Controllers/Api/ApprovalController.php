@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\IdeaApproved;
 use App\Http\Controllers\Controller;
 use App\Models\Approval;
 use App\Models\Idea;
 use App\Services\ApprovalWorkflowService;
 use App\Services\NotificationService;
 use App\Services\PointsService;
-use App\Events\IdeaApproved;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class ApprovalController extends Controller
@@ -46,7 +46,7 @@ class ApprovalController extends Controller
     public function store(Request $request): JsonResponse
     {
         // Only admins and department heads can create approval requests
-        if (!Auth::user()->isAdmin() && !Auth::user()->isDepartmentHead()) {
+        if (! Auth::user()->isAdmin() && ! Auth::user()->isDepartmentHead()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized to create approval requests',
@@ -136,7 +136,7 @@ class ApprovalController extends Controller
             $message = 'Idea fully approved! (+50 points, +100 XP for author)';
         } elseif ($result['next_level']) {
             // Move to next approval level
-            if (!empty($result['pending_approvals'])) {
+            if (! empty($result['pending_approvals'])) {
                 foreach ($result['pending_approvals'] as $nextApproval) {
                     $notificationService->notifyApprovalRequest($nextApproval);
                 }
@@ -242,7 +242,7 @@ class ApprovalController extends Controller
     public function destroy(Approval $approval): JsonResponse
     {
         // Only admins can delete approvals
-        if (!Auth::user()->isAdmin()) {
+        if (! Auth::user()->isAdmin()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized to delete approvals',

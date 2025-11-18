@@ -39,7 +39,7 @@ class Comment extends Model
         static::deleting(function (Comment $comment) {
             // Only decrement for top-level comments (not replies)
             // Replies don't contribute to the idea's comment_count
-            if (!$comment->parent_id && $comment->idea) {
+            if (! $comment->parent_id && $comment->idea) {
                 $comment->idea()->decrement('comments_count');
             }
         });

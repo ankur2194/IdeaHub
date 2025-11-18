@@ -2,15 +2,15 @@
 
 namespace App\Services;
 
-use App\Models\Idea;
-use App\Models\Comment;
-use App\Models\Notification;
-use App\Models\User;
-use App\Mail\IdeaSubmittedMail;
+use App\Events\NewNotification;
+use App\Mail\CommentPostedMail;
 use App\Mail\IdeaApprovedMail;
 use App\Mail\IdeaRejectedMail;
-use App\Mail\CommentPostedMail;
-use App\Events\NewNotification;
+use App\Mail\IdeaSubmittedMail;
+use App\Models\Comment;
+use App\Models\Idea;
+use App\Models\Notification;
+use App\Models\User;
 use Illuminate\Support\Facades\Mail;
 
 class NotificationService
@@ -47,7 +47,7 @@ class NotificationService
                 Mail::to($approver->email)->send(new IdeaSubmittedMail($idea, $approver));
                 $notification->update(['email_sent' => true]);
             } catch (\Exception $e) {
-                logger()->error("Failed to send idea submitted email", [
+                logger()->error('Failed to send idea submitted email', [
                     'notification_id' => $notification->id,
                     'error' => $e->getMessage(),
                 ]);
@@ -60,7 +60,7 @@ class NotificationService
      */
     public function notifyIdeaApproved(Idea $idea, ?User $approver = null): void
     {
-        if (!$idea->user) {
+        if (! $idea->user) {
             return;
         }
 
@@ -84,13 +84,13 @@ class NotificationService
 
         // Send email notification
         try {
-            if (!$approver) {
+            if (! $approver) {
                 $approver = User::where('role', 'admin')->first();
             }
             Mail::to($idea->user->email)->send(new IdeaApprovedMail($idea, $approver));
             $notification->update(['email_sent' => true]);
         } catch (\Exception $e) {
-            logger()->error("Failed to send idea approved email", [
+            logger()->error('Failed to send idea approved email', [
                 'notification_id' => $notification->id,
                 'error' => $e->getMessage(),
             ]);
@@ -102,7 +102,7 @@ class NotificationService
      */
     public function notifyIdeaRejected(Idea $idea, ?string $reason = '', ?User $approver = null): void
     {
-        if (!$idea->user) {
+        if (! $idea->user) {
             return;
         }
 
@@ -113,7 +113,7 @@ class NotificationService
             'user_id' => $idea->user_id,
             'type' => 'idea_rejected',
             'title' => 'Idea Review Update',
-            'message' => "Your idea \"{$idea->title}\" was not approved by {$approverName}. " . ($reason ? "Reason: {$reason}" : ''),
+            'message' => "Your idea \"{$idea->title}\" was not approved by {$approverName}. ".($reason ? "Reason: {$reason}" : ''),
             'data' => [
                 'idea_id' => $idea->id,
                 'idea_title' => $idea->title,
@@ -127,13 +127,13 @@ class NotificationService
 
         // Send email notification
         try {
-            if (!$approver) {
+            if (! $approver) {
                 $approver = User::where('role', 'admin')->first();
             }
             Mail::to($idea->user->email)->send(new IdeaRejectedMail($idea, $approver, $reason));
             $notification->update(['email_sent' => true]);
         } catch (\Exception $e) {
-            logger()->error("Failed to send idea rejected email", [
+            logger()->error('Failed to send idea rejected email', [
                 'notification_id' => $notification->id,
                 'error' => $e->getMessage(),
             ]);
@@ -148,7 +148,7 @@ class NotificationService
         $approver = $approval->approver;
         $idea = $approval->idea;
 
-        if (!$approver || !$idea) {
+        if (! $approver || ! $idea) {
             return;
         }
 
@@ -178,7 +178,7 @@ class NotificationService
     {
         $idea = $comment->idea;
 
-        if (!$idea || !$idea->user) {
+        if (! $idea || ! $idea->user) {
             return;
         }
 
@@ -209,7 +209,7 @@ class NotificationService
             Mail::to($idea->user->email)->send(new CommentPostedMail($comment, $idea));
             $notification->update(['email_sent' => true]);
         } catch (\Exception $e) {
-            logger()->error("Failed to send comment posted email", [
+            logger()->error('Failed to send comment posted email', [
                 'notification_id' => $notification->id,
                 'error' => $e->getMessage(),
             ]);
@@ -223,7 +223,7 @@ class NotificationService
     {
         $parentComment = $reply->parent;
 
-        if (!$parentComment || !$parentComment->user) {
+        if (! $parentComment || ! $parentComment->user) {
             return;
         }
 
@@ -257,7 +257,7 @@ class NotificationService
             Mail::to($parentComment->user->email)->send(new CommentPostedMail($reply, $idea));
             $notification->update(['email_sent' => true]);
         } catch (\Exception $e) {
-            logger()->error("Failed to send comment reply email", [
+            logger()->error('Failed to send comment reply email', [
                 'notification_id' => $notification->id,
                 'error' => $e->getMessage(),
             ]);

@@ -59,8 +59,9 @@ export async function unregisterServiceWorker(): Promise<boolean> {
  * Check if app is running as installed PWA
  */
 export function isPWA(): boolean {
+  const navigatorWithStandalone = window.navigator as Navigator & { standalone?: boolean };
   return window.matchMedia('(display-mode: standalone)').matches ||
-         (window.navigator as any).standalone === true ||
+         navigatorWithStandalone.standalone === true ||
          document.referrer.includes('android-app://');
 }
 
@@ -124,14 +125,19 @@ export async function checkForUpdates(): Promise<void> {
 /**
  * Get install prompt event for PWA installation
  */
-let deferredPrompt: any = null;
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
+}
+
+let deferredPrompt: BeforeInstallPromptEvent | null = null;
 
 export function setupInstallPrompt(): void {
   window.addEventListener('beforeinstallprompt', (e) => {
     // Prevent the mini-infobar from appearing on mobile
     e.preventDefault();
     // Stash the event so it can be triggered later
-    deferredPrompt = e;
+    deferredPrompt = e as BeforeInstallPromptEvent;
     console.log('[PWA] Install prompt ready');
   });
 

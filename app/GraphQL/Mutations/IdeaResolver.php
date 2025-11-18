@@ -35,7 +35,7 @@ class IdeaResolver
             ]);
 
             // Attach tags if provided
-            if (!empty($args['tag_ids'])) {
+            if (! empty($args['tag_ids'])) {
                 $idea->tags()->sync($args['tag_ids']);
             }
 
@@ -63,7 +63,7 @@ class IdeaResolver
         $idea = Idea::findOrFail($args['id']);
 
         // Check authorization
-        if ($idea->user_id !== $user->id && !$user->isAdmin()) {
+        if ($idea->user_id !== $user->id && ! $user->isAdmin()) {
             throw new \Exception('Unauthorized to update this idea.');
         }
 
@@ -77,7 +77,7 @@ class IdeaResolver
                 'status' => $args['status'] ?? null,
                 'is_anonymous' => $args['is_anonymous'] ?? null,
                 'attachments' => $args['attachments'] ?? null,
-            ], fn($value) => $value !== null);
+            ], fn ($value) => $value !== null);
 
             $idea->update($updateData);
 
@@ -107,7 +107,7 @@ class IdeaResolver
         $idea = Idea::findOrFail($args['id']);
 
         // Check authorization
-        if ($idea->user_id !== $user->id && !$user->isAdmin()) {
+        if ($idea->user_id !== $user->id && ! $user->isAdmin()) {
             throw new \Exception('Unauthorized to delete this idea.');
         }
 
@@ -169,7 +169,7 @@ class IdeaResolver
         $idea = Idea::findOrFail($args['idea_id']);
 
         // Check if not liked
-        if (!$idea->likedBy()->where('users.id', $user->id)->exists()) {
+        if (! $idea->likedBy()->where('users.id', $user->id)->exists()) {
             throw new \Exception('You have not liked this idea.');
         }
 

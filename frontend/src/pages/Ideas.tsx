@@ -39,7 +39,7 @@ const Ideas = () => {
         setSearchParams(params);
       }
     }
-  }, [debouncedSearchQuery]);
+  }, [debouncedSearchQuery, searchParams, setSearchParams]);
 
   useEffect(() => {
     const categoryId = searchParams.get('category');
@@ -63,7 +63,7 @@ const Ideas = () => {
 
     dispatch(setFilters(newFilters));
     dispatch(fetchIdeas(newFilters));
-  }, [searchParams]);
+  }, [searchParams, dispatch, filters]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

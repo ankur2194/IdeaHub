@@ -21,7 +21,7 @@ class ApprovalResolver
         $idea = Idea::findOrFail($args['id']);
 
         // Check if user has permission to approve
-        if (!$user->isAdmin() && !$user->isDepartmentHead() && !$user->isTeamLead()) {
+        if (! $user->isAdmin() && ! $user->isDepartmentHead() && ! $user->isTeamLead()) {
             throw new \Exception('Unauthorized to approve ideas.');
         }
 
@@ -72,7 +72,7 @@ class ApprovalResolver
         $idea = Idea::findOrFail($args['id']);
 
         // Check if user has permission to reject
-        if (!$user->isAdmin() && !$user->isDepartmentHead() && !$user->isTeamLead()) {
+        if (! $user->isAdmin() && ! $user->isDepartmentHead() && ! $user->isTeamLead()) {
             throw new \Exception('Unauthorized to reject ideas.');
         }
 

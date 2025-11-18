@@ -25,7 +25,7 @@ class TenantMiddleware
             session(['tenant_id' => $tenant->id]);
 
             // Check if tenant is active
-            if (!$tenant->is_active) {
+            if (! $tenant->is_active) {
                 return response()->json([
                     'success' => false,
                     'message' => 'This account is currently inactive. Please contact support.',

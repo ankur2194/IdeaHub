@@ -26,7 +26,7 @@ export interface WidgetConfig {
   showGrid?: boolean;
   showLegend?: boolean;
   showTooltip?: boolean;
-  customOptions?: Record<string, any>;
+  customOptions?: Record<string, unknown>;
 }
 
 export interface Widget {

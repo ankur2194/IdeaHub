@@ -44,7 +44,7 @@ class IdeaSubmittedMail extends Mailable
                 'ideaDescription' => $this->idea->description,
                 'authorName' => $this->idea->is_anonymous ? 'Anonymous' : $this->idea->user->name,
                 'approverName' => $this->approver->name,
-                'ideaUrl' => config('app.frontend_url', 'http://localhost:5173') . '/ideas/' . $this->idea->id,
+                'ideaUrl' => config('app.frontend_url', 'http://localhost:5173').'/ideas/'.$this->idea->id,
                 'categoryName' => $this->idea->category?->name ?? 'Uncategorized',
             ],
         );

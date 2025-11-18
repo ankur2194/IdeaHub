@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   TrophyIcon,
   FireIcon,
@@ -18,11 +18,7 @@ const UserGamificationCard: React.FC<UserGamificationCardProps> = ({ userId }) =
   const [stats, setStats] = useState<GamificationStats | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadStats();
-  }, [userId]);
-
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     try {
       const response = userId
         ? await gamificationService.getUserStats(userId)
@@ -33,7 +29,11 @@ const UserGamificationCard: React.FC<UserGamificationCardProps> = ({ userId }) =
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId]);
+
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
 
   if (loading) {
     return (

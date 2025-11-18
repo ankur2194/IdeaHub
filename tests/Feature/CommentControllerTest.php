@@ -13,7 +13,9 @@ class CommentControllerTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
+
     protected User $admin;
+
     protected Idea $idea;
 
     protected function setUp(): void

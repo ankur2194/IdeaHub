@@ -2,14 +2,13 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\CommentCreated;
 use App\Http\Controllers\Controller;
 use App\Models\Comment;
 use App\Models\Idea;
 use App\Services\NotificationService;
 use App\Services\PointsService;
-use App\Events\CommentCreated;
 use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 
 class CommentController extends Controller
@@ -38,9 +37,11 @@ class CommentController extends Controller
                 if ($comment->replies) {
                     $comment->replies->transform(function ($reply) use ($userId) {
                         $reply->liked = $reply->likedBy()->where('user_id', $userId)->exists();
+
                         return $reply;
                     });
                 }
+
                 return $comment;
             });
         }
@@ -160,7 +161,7 @@ class CommentController extends Controller
     public function destroy(Comment $comment)
     {
         // Check authorization
-        if ($comment->user_id !== Auth::id() && !Auth::user()->isAdmin()) {
+        if ($comment->user_id !== Auth::id() && ! Auth::user()->isAdmin()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized to delete this comment',

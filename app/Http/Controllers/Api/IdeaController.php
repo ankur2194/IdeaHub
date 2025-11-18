@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\IdeaCreated;
 use App\Http\Controllers\Controller;
 use App\Models\Idea;
 use App\Services\NotificationService;
 use App\Services\PointsService;
-use App\Events\IdeaCreated;
 use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -59,7 +58,7 @@ class IdeaController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+                    ->orWhere('description', 'like', "%{$search}%");
             });
         }
 
@@ -94,6 +93,7 @@ class IdeaController extends Controller
 
             $ideas->getCollection()->transform(function ($idea) use ($likedIdeaIds) {
                 $idea->liked = in_array($idea->id, $likedIdeaIds);
+
                 return $idea;
             });
         }
@@ -133,7 +133,7 @@ class IdeaController extends Controller
                 // Sanitize filename to prevent path traversal
                 $originalName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
                 $safeName = preg_replace('/[^a-zA-Z0-9_-]/', '_', $originalName);
-                $filename = time() . '_' . Str::random(10) . '_' . $safeName . '.' . $extension;
+                $filename = time().'_'.Str::random(10).'_'.$safeName.'.'.$extension;
 
                 $path = $file->storeAs('idea-attachments', $filename, 'public');
 
@@ -153,7 +153,7 @@ class IdeaController extends Controller
             'category_id' => $validated['category_id'] ?? null,
             'is_anonymous' => $validated['is_anonymous'] ?? false,
             'status' => 'draft',
-            'attachments' => !empty($attachmentPaths) ? $attachmentPaths : null,
+            'attachments' => ! empty($attachmentPaths) ? $attachmentPaths : null,
         ]);
 
         // Attach tags if provided
@@ -200,7 +200,7 @@ class IdeaController extends Controller
     public function update(Request $request, Idea $idea)
     {
         // Check authorization
-        if ($idea->user_id !== Auth::id() && !Auth::user()->isAdmin()) {
+        if ($idea->user_id !== Auth::id() && ! Auth::user()->isAdmin()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized to update this idea',
@@ -223,7 +223,7 @@ class IdeaController extends Controller
         $existingAttachments = $idea->attachments ?? [];
         if ($request->hasFile('attachments')) {
             foreach ($request->file('attachments') as $file) {
-                $filename = time() . '_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
+                $filename = time().'_'.Str::random(10).'.'.$file->getClientOriginalExtension();
                 $path = $file->storeAs('idea-attachments', $filename, 'public');
 
                 $existingAttachments[] = [
@@ -249,10 +249,10 @@ class IdeaController extends Controller
         }
 
         $updateData = array_filter($validated, function ($key) {
-            return !in_array($key, ['tags', 'attachments', 'remove_attachments']);
+            return ! in_array($key, ['tags', 'attachments', 'remove_attachments']);
         }, ARRAY_FILTER_USE_KEY);
 
-        $updateData['attachments'] = !empty($existingAttachments) ? $existingAttachments : null;
+        $updateData['attachments'] = ! empty($existingAttachments) ? $existingAttachments : null;
 
         $idea->update($updateData);
 
@@ -276,7 +276,7 @@ class IdeaController extends Controller
     public function destroy(Idea $idea)
     {
         // Check authorization
-        if ($idea->user_id !== Auth::id() && !Auth::user()->isAdmin()) {
+        if ($idea->user_id !== Auth::id() && ! Auth::user()->isAdmin()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized to delete this idea',

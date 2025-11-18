@@ -18,7 +18,7 @@ class ExportServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->exportService = new ExportService();
+        $this->exportService = new ExportService;
     }
 
     public function test_can_export_analytics_as_pdf(): void
