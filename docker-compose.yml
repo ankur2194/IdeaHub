@@ -9,29 +9,42 @@ services:
     container_name: ideahub_app
     restart: unless-stopped
     ports:
-      - "8000:80"
+      - "${APP_PORT:-8000}:80"
     environment:
-      - APP_ENV=production
-      - APP_DEBUG=false
+      - APP_NAME=${APP_NAME:-IdeaHub}
+      - APP_ENV=${APP_ENV:-production}
+      - APP_DEBUG=${APP_DEBUG:-false}
+      - APP_URL=${APP_URL:-http://localhost:8000}
       - DB_CONNECTION=mysql
       - DB_HOST=mysql
       - DB_PORT=3306
-      - DB_DATABASE=ideahub
-      - DB_USERNAME=ideahub
-      - DB_PASSWORD=secret
+      - DB_DATABASE=${DB_DATABASE:-ideahub}
+      - DB_USERNAME=${DB_USERNAME:-ideahub}
+      - DB_PASSWORD=${DB_PASSWORD:-secret}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - CACHE_DRIVER=redis
+      - CACHE_STORE=redis
       - SESSION_DRIVER=redis
       - QUEUE_CONNECTION=redis
+      - BROADCAST_CONNECTION=pusher
+      - PUSHER_APP_ID=local
+      - PUSHER_APP_KEY=local
+      - PUSHER_APP_SECRET=local
+      - PUSHER_HOST=soketi
+      - PUSHER_PORT=6001
+      - PUSHER_SCHEME=http
+      - SEED_DATABASE=${SEED_DATABASE:-false}
     volumes:
       - ./storage:/var/www/html/storage
       - ./bootstrap/cache:/var/www/html/bootstrap/cache
+      - ./.env:/var/www/html/.env
     networks:
       - ideahub
     depends_on:
-      - mysql
-      - redis
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   # MySQL Database
   mysql:
@@ -39,17 +52,23 @@ services:
     container_name: ideahub_mysql
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: ideahub
-      MYSQL_USER: ideahub
-      MYSQL_PASSWORD: secret
-      MYSQL_ROOT_PASSWORD: rootsecret
+      MYSQL_DATABASE: ${DB_DATABASE:-ideahub}
+      MYSQL_USER: ${DB_USERNAME:-ideahub}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootsecret}
     volumes:
       - mysql_data:/var/lib/mysql
     ports:
-      - "3306:3306"
+      - "${MYSQL_PORT:-3306}:3306"
     networks:
       - ideahub
     command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-rootsecret}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   # Redis Cache & Queue
   redis:
@@ -57,12 +76,18 @@ services:
     container_name: ideahub_redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT:-6379}:6379"
     volumes:
       - redis_data:/data
     networks:
       - ideahub
     command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
 
   # Queue Worker (separate container for processing jobs)
   queue:
@@ -71,24 +96,35 @@ services:
       dockerfile: Dockerfile
     container_name: ideahub_queue
     restart: unless-stopped
+    entrypoint: []
     command: php artisan queue:work redis --sleep=3 --tries=3 --max-time=3600
     environment:
-      - APP_ENV=production
+      - APP_NAME=${APP_NAME:-IdeaHub}
+      - APP_ENV=${APP_ENV:-production}
+      - APP_DEBUG=${APP_DEBUG:-false}
       - DB_CONNECTION=mysql
       - DB_HOST=mysql
       - DB_PORT=3306
-      - DB_DATABASE=ideahub
-      - DB_USERNAME=ideahub
-      - DB_PASSWORD=secret
+      - DB_DATABASE=${DB_DATABASE:-ideahub}
+      - DB_USERNAME=${DB_USERNAME:-ideahub}
+      - DB_PASSWORD=${DB_PASSWORD:-secret}
       - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CACHE_STORE=redis
+      - SESSION_DRIVER=redis
       - QUEUE_CONNECTION=redis
     volumes:
       - ./storage:/var/www/html/storage
+      - ./.env:/var/www/html/.env
     networks:
       - ideahub
     depends_on:
-      - mysql
-      - redis
+      app:
+        condition: service_started
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   # Soketi WebSocket Server
   soketi:

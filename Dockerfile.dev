@@ -1,0 +1,68 @@
+# Development Dockerfile for IdeaHub
+# This image is optimized for local development with hot reloading
+
+FROM php:8.2-cli-alpine
+
+# Set working directory
+WORKDIR /var/www/html
+
+# Install system dependencies
+RUN apk add --no-cache \
+    bash \
+    curl \
+    libzip-dev \
+    zip \
+    unzip \
+    git \
+    oniguruma-dev \
+    sqlite \
+    sqlite-dev \
+    libpng-dev \
+    libjpeg-turbo-dev \
+    freetype-dev \
+    nodejs \
+    npm
+
+# Install PHP extensions
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j$(nproc) \
+    pdo \
+    pdo_sqlite \
+    mbstring \
+    zip \
+    exif \
+    pcntl \
+    bcmath \
+    gd
+
+# Install Composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+# Copy composer files and install dependencies
+COPY composer.json composer.lock ./
+RUN composer install --no-scripts --no-interaction
+
+# Copy the rest of the application
+COPY . .
+
+# Copy entrypoint script
+COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Set permissions
+RUN mkdir -p storage/framework/{sessions,views,cache} \
+    && mkdir -p storage/logs \
+    && mkdir -p bootstrap/cache \
+    && chmod -R 777 storage bootstrap/cache
+
+# Create SQLite database
+RUN touch database/database.sqlite \
+    && chmod 666 database/database.sqlite
+
+EXPOSE 8000
+
+# Set entrypoint
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+
+# Default command
+CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
