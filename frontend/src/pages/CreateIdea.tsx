@@ -63,7 +63,8 @@ const CreateIdea = () => {
         submitData.append('attachments[]', file);
       });
 
-      await dispatch(createIdea(submitData as any)).unwrap();
+      // FormData is already a valid type for createIdea thunk
+      await dispatch(createIdea(submitData)).unwrap();
       navigate('/ideas');
     } catch (err) {
       // Error is handled by Redux slice

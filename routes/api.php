@@ -17,9 +17,12 @@ use App\Http\Controllers\Api\TagController;
 use App\Http\Controllers\Api\WidgetController;
 use Illuminate\Support\Facades\Route;
 
-// Public routes
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
+// Public routes with rate limiting for security
+Route::middleware('throttle:10,1')->group(function () {
+    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/sso/callback', [SsoController::class, 'callback']);
+});
 
 // Public read-only routes (no auth required)
 Route::get('/categories', [CategoryController::class, 'index']);
@@ -33,7 +36,6 @@ Route::get('/branding', [BrandingController::class, 'index']);
 // SSO (public - for SSO authentication flow)
 Route::get('/sso/providers', [SsoController::class, 'index']);
 Route::get('/sso/{provider}/initiate', [SsoController::class, 'initiate']);
-Route::post('/sso/callback', [SsoController::class, 'callback']);
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {

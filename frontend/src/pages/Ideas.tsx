@@ -144,8 +144,9 @@ const Ideas = () => {
           <select
             value={filters.sort_by || 'created_at'}
             onChange={(e) => {
-              dispatch(setFilters({ ...filters, sort_by: e.target.value as any }));
-              dispatch(fetchIdeas({ ...filters, sort_by: e.target.value as any }));
+              const sortValue = e.target.value as 'created_at' | 'likes_count' | 'comments_count' | 'views_count' | 'title';
+              dispatch(setFilters({ ...filters, sort_by: sortValue }));
+              dispatch(fetchIdeas({ ...filters, sort_by: sortValue }));
             }}
             className="rounded-md border-0 py-1.5 pl-3 pr-10 text-sm text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-blue-600"
           >

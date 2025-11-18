@@ -1,8 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchIdeas, likeIdea } from '../store/ideasSlice';
 import { fetchCategories } from '../store/categoriesSlice';
+import { analyticsService, type OverviewStats } from '../services/analyticsService';
 import IdeaCard from '../components/ideas/IdeaCard';
 import {
   LightBulbIcon,
@@ -16,40 +17,57 @@ const Dashboard = () => {
   const { ideas, loading } = useAppSelector((state) => state.ideas);
   const { categories } = useAppSelector((state) => state.categories);
   const { user } = useAppSelector((state) => state.auth);
+  const [overviewStats, setOverviewStats] = useState<OverviewStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
 
   useEffect(() => {
     dispatch(fetchIdeas({ per_page: 6, sort_by: 'created_at', sort_order: 'desc' }));
     dispatch(fetchCategories());
+
+    // Fetch dashboard overview statistics
+    const loadStats = async () => {
+      try {
+        setStatsLoading(true);
+        const response = await analyticsService.getOverview();
+        setOverviewStats(response.data);
+      } catch (error) {
+        console.error('Failed to load dashboard stats:', error);
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+
+    loadStats();
   }, [dispatch]);
 
   const handleLike = (id: number) => {
     dispatch(likeIdea(id));
   };
 
-  // Calculate stats
+  // Calculate stats with real data
   const recentIdeas = ideas.slice(0, 6);
   const stats = [
     {
       name: 'Total Ideas',
-      value: '0',
+      value: statsLoading ? '...' : (overviewStats?.total_ideas ?? 0).toString(),
       icon: LightBulbIcon,
       color: 'bg-blue-500',
     },
     {
       name: 'Pending Review',
-      value: '0',
+      value: statsLoading ? '...' : (overviewStats?.pending_ideas ?? 0).toString(),
       icon: ClockIcon,
       color: 'bg-yellow-500',
     },
     {
       name: 'Approved',
-      value: '0',
+      value: statsLoading ? '...' : (overviewStats?.approved_ideas ?? 0).toString(),
       icon: CheckCircleIcon,
       color: 'bg-green-500',
     },
     {
       name: 'Implemented',
-      value: '0',
+      value: statsLoading ? '...' : (overviewStats?.implemented_ideas ?? 0).toString(),
       icon: ChartBarIcon,
       color: 'bg-purple-500',
     },

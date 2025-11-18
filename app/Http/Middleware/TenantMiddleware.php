@@ -69,9 +69,10 @@ class TenantMiddleware
             }
         }
 
-        // If no tenant found, check if there's a tenant_id in the request (for API)
-        if ($request->has('tenant_id')) {
-            return Tenant::where('id', $request->input('tenant_id'))->where('is_active', true)->first();
+        // For API requests, tenant should be identified by user's tenant assignment
+        // Check if user is authenticated and use their tenant
+        if ($request->user()) {
+            return $request->user()->tenant;
         }
 
         return null;

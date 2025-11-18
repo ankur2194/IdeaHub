@@ -7,6 +7,7 @@ use App\Models\ApprovalWorkflow;
 use App\Models\Idea;
 use App\Models\User;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class ApprovalWorkflowService
 {
@@ -39,19 +40,6 @@ class ApprovalWorkflowService
             // Category match
             if ($workflow->category_id && $workflow->category_id !== $idea->category_id) {
                 continue;
-            }
-
-            // Budget match (if idea has budget field)
-            if ($workflow->min_budget || $workflow->max_budget) {
-                $ideaBudget = $idea->budget ?? 0;
-
-                if ($workflow->min_budget && $ideaBudget < $workflow->min_budget) {
-                    continue;
-                }
-
-                if ($workflow->max_budget && $ideaBudget > $workflow->max_budget) {
-                    continue;
-                }
             }
 
             // If all criteria match, use this workflow
@@ -140,16 +128,25 @@ class ApprovalWorkflowService
      */
     public function processApproval(Approval $approval, string $action, ?string $notes = null): array
     {
-        $idea = $approval->idea;
+        return DB::transaction(function () use ($approval, $action, $notes) {
+            // Lock the approval to prevent race conditions
+            $approval = Approval::lockForUpdate()->findOrFail($approval->id);
 
-        // Update the approval
-        $approval->update([
-            'status' => $action,
-            'notes' => $notes,
-            $action === 'approved' ? 'approved_at' : 'rejected_at' => now(),
-        ]);
+            // Check if already processed
+            if ($approval->status !== 'pending') {
+                throw new \Exception('This approval has already been processed.');
+            }
 
-        if ($action === 'rejected') {
+            $idea = $approval->idea;
+
+            // Update the approval
+            $approval->update([
+                'status' => $action,
+                'notes' => $notes,
+                $action === 'approved' ? 'approved_at' : 'rejected_at' => now(),
+            ]);
+
+            if ($action === 'rejected') {
             // If rejected, reject the entire idea
             $idea->update([
                 'status' => 'rejected',
@@ -217,11 +214,12 @@ class ApprovalWorkflowService
         // Move to next level
         $idea->update(['status' => 'under_review']);
 
-        return [
-            'final_status' => 'under_review',
-            'next_level' => $currentLevel + 1,
-            'pending_approvals' => $nextLevelApprovals,
-        ];
+            return [
+                'final_status' => 'under_review',
+                'next_level' => $currentLevel + 1,
+                'pending_approvals' => $nextLevelApprovals,
+            ];
+        });
     }
 
     /**

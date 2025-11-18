@@ -17,7 +17,7 @@ const echo = new Echo({
   disableStats: true,
   auth: {
     headers: {
-      Authorization: `Bearer ${localStorage.getItem('token')}`,
+      Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
       Accept: 'application/json',
     },
   },

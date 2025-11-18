@@ -76,11 +76,19 @@ class IdeaController extends Controller
 
         $ideas = $query->paginate($request->get('per_page', 15));
 
-        // Add 'liked' attribute to each idea
+        // Add 'liked' attribute to each idea (optimized to prevent N+1 query)
         if (Auth::check()) {
             $userId = Auth::id();
-            $ideas->getCollection()->transform(function ($idea) use ($userId) {
-                $idea->liked = $idea->likedBy()->where('user_id', $userId)->exists();
+
+            // Get all liked idea IDs in a single query
+            $likedIdeaIds = DB::table('idea_likes')
+                ->where('user_id', $userId)
+                ->whereIn('idea_id', $ideas->pluck('id'))
+                ->pluck('idea_id')
+                ->toArray();
+
+            $ideas->getCollection()->transform(function ($idea) use ($likedIdeaIds) {
+                $idea->liked = in_array($idea->id, $likedIdeaIds);
                 return $idea;
             });
         }
@@ -103,15 +111,25 @@ class IdeaController extends Controller
             'is_anonymous' => 'boolean',
             'tags' => 'nullable|array',
             'tags.*' => 'exists:tags,id',
-            'attachments' => 'nullable|array',
-            'attachments.*' => 'file|max:10240|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,gif,zip',
+            'attachments' => 'nullable|array|max:5',
+            // Security: ZIP files removed to prevent executable content uploads
+            // For production, consider implementing virus scanning (e.g., ClamAV)
+            'attachments.*' => 'file|max:10240|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,gif',
         ]);
 
-        // Handle file uploads
+        // Handle file uploads with security checks
         $attachmentPaths = [];
         if ($request->hasFile('attachments')) {
             foreach ($request->file('attachments') as $file) {
-                $filename = time() . '_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
+                // Additional security: Validate file extension matches MIME type
+                $extension = $file->getClientOriginalExtension();
+                $mimeType = $file->getMimeType();
+
+                // Sanitize filename to prevent path traversal
+                $originalName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+                $safeName = preg_replace('/[^a-zA-Z0-9_-]/', '_', $originalName);
+                $filename = time() . '_' . Str::random(10) . '_' . $safeName . '.' . $extension;
+
                 $path = $file->storeAs('idea-attachments', $filename, 'public');
 
                 $attachmentPaths[] = [

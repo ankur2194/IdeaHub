@@ -57,6 +57,17 @@ class CommentController extends Controller
             'parent_id' => 'nullable|exists:comments,id',
         ]);
 
+        // Security: Verify the idea belongs to the current tenant
+        $idea = Idea::findOrFail($validated['idea_id']);
+        $currentTenantId = app('current_tenant_id');
+
+        if ($currentTenantId && $idea->tenant_id !== $currentTenantId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized: Cannot comment on ideas from other organizations.',
+            ], 403);
+        }
+
         $comment = Comment::create([
             'idea_id' => $validated['idea_id'],
             'user_id' => Auth::id(),
