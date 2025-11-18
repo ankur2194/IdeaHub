@@ -29,7 +29,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   ],
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [error, setError] = useState<string>('');
+  const [errors, setErrors] = useState<string[]>([]);
 
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 Bytes';
@@ -41,11 +41,12 @@ export const FileUpload: React.FC<FileUploadProps> = ({
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(event.target.files || []);
-    setError('');
+    const newErrors: string[] = [];
+    setErrors([]);
 
     // Validate number of files
     if (files.length + selectedFiles.length > maxFiles) {
-      setError(`Maximum ${maxFiles} files allowed`);
+      setErrors([`Maximum ${maxFiles} files allowed`]);
       return;
     }
 
@@ -54,20 +55,26 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     for (const file of selectedFiles) {
       // Check file type
       if (!acceptedTypes.includes(file.type)) {
-        setError(`File type not allowed: ${file.name}`);
+        newErrors.push(`File type not allowed: ${file.name}`);
         continue;
       }
 
       // Check file size
       const fileSizeMB = file.size / (1024 * 1024);
       if (fileSizeMB > maxSizeMB) {
-        setError(`File too large: ${file.name} (max ${maxSizeMB}MB)`);
+        newErrors.push(`File too large: ${file.name} (max ${maxSizeMB}MB)`);
         continue;
       }
 
       validFiles.push(file);
     }
 
+    // Set all accumulated errors
+    if (newErrors.length > 0) {
+      setErrors(newErrors);
+    }
+
+    // Add valid files even if some failed
     if (validFiles.length > 0) {
       onChange([...files, ...validFiles]);
     }
@@ -81,7 +88,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   const removeFile = (index: number) => {
     const newFiles = files.filter((_, i) => i !== index);
     onChange(newFiles);
-    setError('');
+    setErrors([]);
   };
 
   return (
@@ -108,9 +115,14 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         </span>
       </div>
 
-      {error && (
-        <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-2">
-          {error}
+      {errors.length > 0 && (
+        <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-3 space-y-1">
+          {errors.map((error, index) => (
+            <div key={index} className="flex items-start">
+              <span className="mr-2">•</span>
+              <span>{error}</span>
+            </div>
+          ))}
         </div>
       )}
 
