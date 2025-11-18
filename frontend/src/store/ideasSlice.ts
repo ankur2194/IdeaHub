@@ -237,6 +237,10 @@ const ideasSlice = createSlice({
 
     // Like idea
     builder
+      .addCase(likeIdea.pending, (state) => {
+        // Optional: Add loading state for like action if needed
+        state.error = null;
+      })
       .addCase(likeIdea.fulfilled, (state, action) => {
         const { id, liked, likes_count } = action.payload;
         const idea = state.ideas.find((i) => i.id === id);
@@ -248,6 +252,9 @@ const ideasSlice = createSlice({
           state.currentIdea.likes_count = likes_count;
           state.currentIdea.liked = liked;
         }
+      })
+      .addCase(likeIdea.rejected, (state, action) => {
+        state.error = action.payload as string;
       });
   },
 });

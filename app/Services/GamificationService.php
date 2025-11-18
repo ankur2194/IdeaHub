@@ -8,6 +8,7 @@ use App\Models\Notification;
 use App\Events\BadgeEarned;
 use App\Events\UserLeveledUp;
 use App\Events\NewNotification;
+use Illuminate\Support\Facades\Log;
 
 class GamificationService
 {
@@ -48,6 +49,16 @@ class GamificationService
         // Broadcast level-up event if level changed
         if ($leveledUp) {
             broadcast(new UserLeveledUp($user, $oldLevel, $user->level));
+
+            Log::info('User leveled up', [
+                'user_id' => $user->id,
+                'old_level' => $oldLevel,
+                'new_level' => $user->level,
+                'new_rank' => $user->rank,
+                'reason' => $reason,
+                'badges_earned' => count($newBadges),
+                'tenant_id' => $user->tenant_id,
+            ]);
         }
 
         return [
@@ -166,6 +177,17 @@ class GamificationService
         }
 
         $this->awardExperience($user, self::XP_BADGE_EARNED, "Earned badge: {$badge->name}");
+
+        Log::info('Badge earned', [
+            'user_id' => $user->id,
+            'badge_id' => $badge->id,
+            'badge_name' => $badge->name,
+            'badge_slug' => $badge->slug,
+            'badge_rarity' => $badge->rarity,
+            'points_reward' => $badge->points_reward,
+            'total_badges' => $user->total_badges,
+            'tenant_id' => $user->tenant_id,
+        ]);
 
         // Broadcast badge earned event
         broadcast(new BadgeEarned($user, $badge));

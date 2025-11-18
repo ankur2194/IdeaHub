@@ -17,6 +17,7 @@ interface IdeaCardProps {
 const IdeaCard: React.FC<IdeaCardProps> = ({ idea, onLike, isLiked = false }) => {
   const handleLike = (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation(); // Prevent event from bubbling to Link
     onLike?.(idea.id);
   };
 

@@ -6,6 +6,7 @@ import { fetchCategories } from '../store/categoriesSlice';
 import IdeaCard from '../components/ideas/IdeaCard';
 import AdvancedFilters from '../components/search/AdvancedFilters';
 import { MagnifyingGlassIcon, FunnelIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { useDebounce } from '../hooks/useDebounce';
 import type { IdeaStatus } from '../types';
 
 const Ideas = () => {
@@ -17,9 +18,28 @@ const Ideas = () => {
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   const [showFilters, setShowFilters] = useState(false);
 
+  // Debounce search query to avoid excessive API calls
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
+
   useEffect(() => {
     dispatch(fetchCategories());
   }, [dispatch]);
+
+  // Auto-search with debouncing when user types
+  useEffect(() => {
+    // Only trigger auto-search if there's a meaningful change
+    const currentSearch = searchParams.get('search') || '';
+    if (debouncedSearchQuery !== currentSearch) {
+      if (debouncedSearchQuery.trim()) {
+        setSearchParams({ ...Object.fromEntries(searchParams), search: debouncedSearchQuery });
+      } else if (currentSearch) {
+        // Clear search if query is empty
+        const params = Object.fromEntries(searchParams);
+        delete params.search;
+        setSearchParams(params);
+      }
+    }
+  }, [debouncedSearchQuery]);
 
   useEffect(() => {
     const categoryId = searchParams.get('category');
@@ -144,8 +164,9 @@ const Ideas = () => {
           <select
             value={filters.sort_by || 'created_at'}
             onChange={(e) => {
-              dispatch(setFilters({ ...filters, sort_by: e.target.value as any }));
-              dispatch(fetchIdeas({ ...filters, sort_by: e.target.value as any }));
+              const sortValue = e.target.value as 'created_at' | 'likes_count' | 'comments_count' | 'views_count' | 'title';
+              dispatch(setFilters({ ...filters, sort_by: sortValue }));
+              dispatch(fetchIdeas({ ...filters, sort_by: sortValue }));
             }}
             className="rounded-md border-0 py-1.5 pl-3 pr-10 text-sm text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-blue-600"
           >

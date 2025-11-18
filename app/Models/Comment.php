@@ -31,6 +31,21 @@ class Comment extends Model
     ];
 
     /**
+     * The "booted" method of the model.
+     */
+    protected static function booted(): void
+    {
+        // Decrement comment count when comment is deleted (including cascade deletes)
+        static::deleting(function (Comment $comment) {
+            // Only decrement for top-level comments (not replies)
+            // Replies don't contribute to the idea's comment_count
+            if (!$comment->parent_id && $comment->idea) {
+                $comment->idea()->decrement('comments_count');
+            }
+        });
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>

@@ -42,10 +42,23 @@ const IdeaDetail = () => {
   useIdeaUpdates(
     idea?.id || null,
     // On new comment created
-    (comment) => {
+    (commentData) => {
       // Only add if it's not from the current user (avoid duplicates)
-      if (comment.user.id !== user?.id) {
-        setComments((prev) => [comment as any, ...prev]);
+      if (commentData.user.id !== user?.id) {
+        // Convert broadcast data to full Comment type
+        const newComment: Comment = {
+          id: commentData.id,
+          content: commentData.content,
+          idea_id: commentData.idea_id,
+          user_id: commentData.user.id,
+          parent_id: null,
+          likes_count: 0,
+          is_edited: false,
+          created_at: commentData.created_at,
+          updated_at: commentData.created_at,
+          user: commentData.user,
+        };
+        setComments((prev) => [newComment, ...prev]);
         setShowNewCommentToast(true);
         setTimeout(() => setShowNewCommentToast(false), 3000);
       }

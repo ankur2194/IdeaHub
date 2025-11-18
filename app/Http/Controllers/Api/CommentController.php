@@ -9,6 +9,7 @@ use App\Services\NotificationService;
 use App\Services\PointsService;
 use App\Events\CommentCreated;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 
 class CommentController extends Controller
@@ -18,11 +19,15 @@ class CommentController extends Controller
      */
     public function index(Request $request, Idea $idea)
     {
+        // Validate pagination limit to prevent excessive resource usage
+        $perPage = $request->integer('per_page', 20);
+        $perPage = max(1, min($perPage, 100)); // Clamp between 1 and 100
+
         $comments = $idea->comments()
             ->with(['user', 'replies.user'])
             ->whereNull('parent_id') // Only top-level comments
             ->latest()
-            ->paginate($request->get('per_page', 20));
+            ->paginate($perPage);
 
         // Add 'liked' attribute to each comment
         if (Auth::check()) {
@@ -56,6 +61,17 @@ class CommentController extends Controller
             'content' => 'required|string',
             'parent_id' => 'nullable|exists:comments,id',
         ]);
+
+        // Security: Verify the idea belongs to the current tenant
+        $idea = Idea::findOrFail($validated['idea_id']);
+        $currentTenantId = app('current_tenant_id');
+
+        if ($currentTenantId && $idea->tenant_id !== $currentTenantId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized: Cannot comment on ideas from other organizations.',
+            ], 403);
+        }
 
         $comment = Comment::create([
             'idea_id' => $validated['idea_id'],
@@ -151,9 +167,8 @@ class CommentController extends Controller
             ], 403);
         }
 
-        // Decrement idea's comment count
-        $comment->idea()->decrement('comments_count');
-
+        // Comment count decrement is handled by model event in Comment::booted()
+        // This ensures it works for both manual and cascade deletes
         $comment->delete();
 
         return response()->json([
@@ -165,43 +180,37 @@ class CommentController extends Controller
     /**
      * Like or unlike a comment.
      */
-    public function like(Comment $comment, PointsService $pointsService)
+    public function like(Comment $comment, \App\Services\LikeService $likeService, PointsService $pointsService, \App\Services\GamificationService $gamificationService)
     {
         $user = Auth::user();
 
-        // Check if user already liked this comment
-        if ($comment->likedBy()->where('user_id', $user->id)->exists()) {
-            // Unlike: remove the like
-            $comment->likedBy()->detach($user->id);
-            $comment->decrement('likes_count');
+        // Use LikeService to handle like/unlike logic
+        $result = $likeService->likeComment($comment, $user->id);
 
-            // Deduct points from comment author
+        // Award/deduct points and gamification XP
+        if ($result['liked']) {
+            // Like: award points and XP to comment author
+            if ($comment->user) {
+                $pointsService->awardLikeReceived($comment->user);
+                $gamificationService->trackLikeReceived($comment->user);
+            }
+
+            // Track like given by current user
+            $gamificationService->trackLikeGiven($user);
+        } else {
+            // Unlike: deduct points from comment author
+            // Note: XP is not deducted as it's a progression system
             if ($comment->user) {
                 $pointsService->deductLikeRemoved($comment->user);
             }
-
-            $liked = false;
-            $message = 'Comment unliked';
-        } else {
-            // Like: add the like
-            $comment->likedBy()->attach($user->id);
-            $comment->increment('likes_count');
-
-            // Award points to comment author
-            if ($comment->user) {
-                $pointsService->awardLikeReceived($comment->user);
-            }
-
-            $liked = true;
-            $message = 'Comment liked';
         }
 
         return response()->json([
             'success' => true,
-            'message' => $message,
+            'message' => $result['message'],
             'data' => [
-                'liked' => $liked,
-                'likes_count' => $comment->likes_count,
+                'liked' => $result['liked'],
+                'likes_count' => $result['likes_count'],
             ],
         ]);
     }

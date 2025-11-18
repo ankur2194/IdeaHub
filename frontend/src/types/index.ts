@@ -54,6 +54,7 @@ export interface Idea {
   id: number;
   title: string;
   description: string;
+  budget?: number | null;
   user_id: number;
   category_id: number | null;
   status: IdeaStatus;
@@ -162,6 +163,7 @@ export interface RegisterData {
 export interface CreateIdeaData {
   title: string;
   description: string;
+  budget?: number;
   category_id?: number;
   is_anonymous?: boolean;
   tags?: number[];

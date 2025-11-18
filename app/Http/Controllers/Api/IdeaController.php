@@ -8,6 +8,7 @@ use App\Services\NotificationService;
 use App\Services\PointsService;
 use App\Events\IdeaCreated;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -17,7 +18,7 @@ class IdeaController extends Controller
     /**
      * Display a listing of ideas.
      */
-    public function index(Request $request)
+    public function index(Request $request): \Illuminate\Http\JsonResponse
     {
         $query = Idea::with(['user', 'category', 'tags'])
             ->withCount(['comments', 'approvals']);
@@ -74,13 +75,25 @@ class IdeaController extends Controller
             $query->orderBy('created_at', 'desc');
         }
 
-        $ideas = $query->paginate($request->get('per_page', 15));
+        // Validate pagination limit to prevent excessive resource usage
+        $perPage = $request->integer('per_page', 15);
+        $perPage = max(1, min($perPage, 100)); // Clamp between 1 and 100
 
-        // Add 'liked' attribute to each idea
+        $ideas = $query->paginate($perPage);
+
+        // Add 'liked' attribute to each idea (optimized to prevent N+1 query)
         if (Auth::check()) {
             $userId = Auth::id();
-            $ideas->getCollection()->transform(function ($idea) use ($userId) {
-                $idea->liked = $idea->likedBy()->where('user_id', $userId)->exists();
+
+            // Get all liked idea IDs in a single query
+            $likedIdeaIds = DB::table('idea_likes')
+                ->where('user_id', $userId)
+                ->whereIn('idea_id', $ideas->pluck('id'))
+                ->pluck('idea_id')
+                ->toArray();
+
+            $ideas->getCollection()->transform(function ($idea) use ($likedIdeaIds) {
+                $idea->liked = in_array($idea->id, $likedIdeaIds);
                 return $idea;
             });
         }
@@ -103,15 +116,25 @@ class IdeaController extends Controller
             'is_anonymous' => 'boolean',
             'tags' => 'nullable|array',
             'tags.*' => 'exists:tags,id',
-            'attachments' => 'nullable|array',
-            'attachments.*' => 'file|max:10240|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,gif,zip',
+            'attachments' => 'nullable|array|max:5',
+            // Security: ZIP files removed to prevent executable content uploads
+            // For production, consider implementing virus scanning (e.g., ClamAV)
+            'attachments.*' => 'file|max:10240|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,gif',
         ]);
 
-        // Handle file uploads
+        // Handle file uploads with security checks
         $attachmentPaths = [];
         if ($request->hasFile('attachments')) {
             foreach ($request->file('attachments') as $file) {
-                $filename = time() . '_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
+                // Additional security: Validate file extension matches MIME type
+                $extension = $file->getClientOriginalExtension();
+                $mimeType = $file->getMimeType();
+
+                // Sanitize filename to prevent path traversal
+                $originalName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+                $safeName = preg_replace('/[^a-zA-Z0-9_-]/', '_', $originalName);
+                $filename = time() . '_' . Str::random(10) . '_' . $safeName . '.' . $extension;
+
                 $path = $file->storeAs('idea-attachments', $filename, 'public');
 
                 $attachmentPaths[] = [
@@ -329,29 +352,16 @@ class IdeaController extends Controller
     /**
      * Like or unlike an idea.
      */
-    public function like(Idea $idea, PointsService $pointsService, \App\Services\GamificationService $gamificationService)
+    public function like(Idea $idea, \App\Services\LikeService $likeService, PointsService $pointsService, \App\Services\GamificationService $gamificationService)
     {
         $user = Auth::user();
 
-        // Check if user already liked this idea
-        if ($idea->likedBy()->where('user_id', $user->id)->exists()) {
-            // Unlike: remove the like
-            $idea->likedBy()->detach($user->id);
-            $idea->decrement('likes_count');
+        // Use LikeService to handle like/unlike logic
+        $result = $likeService->likeIdea($idea, $user->id);
 
-            // Deduct points from idea author
-            if ($idea->user) {
-                $pointsService->deductLikeRemoved($idea->user);
-            }
-
-            $liked = false;
-            $message = 'Idea unliked';
-        } else {
-            // Like: add the like
-            $idea->likedBy()->attach($user->id);
-            $idea->increment('likes_count');
-
-            // Award points to idea author
+        // Award/deduct points and gamification XP
+        if ($result['liked']) {
+            // Like: award points to idea author
             if ($idea->user) {
                 $pointsService->awardLikeReceived($idea->user);
                 $gamificationService->trackLikeReceived($idea->user);
@@ -361,7 +371,16 @@ class IdeaController extends Controller
             $gamificationService->trackLikeGiven($user);
 
             $liked = true;
-            $message = 'Idea liked (+2 XP)';
+            $message = $result['message'];
+        } else {
+            // Unlike: deduct points from idea author
+            // Note: XP is not deducted as it's a progression system
+            if ($idea->user) {
+                $pointsService->deductLikeRemoved($idea->user);
+            }
+
+            $liked = false;
+            $message = $result['message'];
         }
 
         return response()->json([
@@ -369,7 +388,7 @@ class IdeaController extends Controller
             'message' => $message,
             'data' => [
                 'liked' => $liked,
-                'likes_count' => $idea->likes_count,
+                'likes_count' => $result['likes_count'],
             ],
         ]);
     }

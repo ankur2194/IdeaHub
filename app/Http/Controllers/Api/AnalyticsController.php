@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Category;
 use App\Models\Comment;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
@@ -16,7 +17,7 @@ class AnalyticsController extends Controller
     /**
      * Get dashboard overview statistics
      */
-    public function overview()
+    public function overview(): JsonResponse
     {
         $totalIdeas = Idea::count();
         $totalUsers = User::where('is_active', true)->count();
@@ -56,7 +57,7 @@ class AnalyticsController extends Controller
     /**
      * Get ideas trend over time
      */
-    public function ideasTrend(Request $request)
+    public function ideasTrend(Request $request): JsonResponse
     {
         $period = $request->get('period', '30days'); // 7days, 30days, 90days, 1year
 
@@ -114,7 +115,7 @@ class AnalyticsController extends Controller
     /**
      * Get category distribution
      */
-    public function categoryDistribution()
+    public function categoryDistribution(): JsonResponse
     {
         $categories = Category::withCount('ideas')
             ->having('ideas_count', '>', 0)
@@ -136,7 +137,7 @@ class AnalyticsController extends Controller
     /**
      * Get status breakdown
      */
-    public function statusBreakdown()
+    public function statusBreakdown(): JsonResponse
     {
         $statuses = Idea::select('status', DB::raw('COUNT(*) as count'))
             ->groupBy('status')
@@ -158,7 +159,7 @@ class AnalyticsController extends Controller
     /**
      * Get leaderboard (top contributors)
      */
-    public function leaderboard(Request $request)
+    public function leaderboard(Request $request): JsonResponse
     {
         $limit = $request->get('limit', 10);
 
@@ -187,7 +188,7 @@ class AnalyticsController extends Controller
     /**
      * Get department participation
      */
-    public function departmentStats()
+    public function departmentStats(): JsonResponse
     {
         $departments = Idea::select('users.department', DB::raw('COUNT(ideas.id) as ideas_count'))
             ->join('users', 'ideas.user_id', '=', 'users.id')
@@ -211,7 +212,7 @@ class AnalyticsController extends Controller
     /**
      * Get recent activity
      */
-    public function recentActivity(Request $request)
+    public function recentActivity(Request $request): JsonResponse
     {
         $limit = $request->get('limit', 10);
 
@@ -244,7 +245,7 @@ class AnalyticsController extends Controller
     /**
      * Get user statistics
      */
-    public function userStats(Request $request)
+    public function userStats(Request $request): JsonResponse
     {
         $userId = $request->user()->id;
 

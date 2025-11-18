@@ -22,6 +22,7 @@ class Idea extends Model
     protected $fillable = [
         'title',
         'description',
+        'budget',
         'user_id',
         'category_id',
         'status',
@@ -45,6 +46,7 @@ class Idea extends Model
     protected function casts(): array
     {
         return [
+            'budget' => 'decimal:2',
             'is_anonymous' => 'boolean',
             'attachments' => 'array',
             'submitted_at' => 'datetime',
