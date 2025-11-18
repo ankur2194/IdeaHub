@@ -9,6 +9,7 @@ use App\Services\NotificationService;
 use App\Services\PointsService;
 use App\Events\CommentCreated;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 
 class CommentController extends Controller

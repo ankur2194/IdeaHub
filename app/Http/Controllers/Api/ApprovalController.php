@@ -10,6 +10,7 @@ use App\Services\NotificationService;
 use App\Services\PointsService;
 use App\Events\IdeaApproved;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 
 class ApprovalController extends Controller
@@ -17,7 +18,7 @@ class ApprovalController extends Controller
     /**
      * Display approvals for the current user.
      */
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
         $query = Approval::with(['idea.user', 'idea.category', 'approver'])
             ->where('approver_id', Auth::id());
@@ -42,7 +43,7 @@ class ApprovalController extends Controller
     /**
      * Store a newly created approval request.
      */
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         // Only admins and department heads can create approval requests
         if (!Auth::user()->isAdmin() && !Auth::user()->isDepartmentHead()) {
@@ -79,7 +80,7 @@ class ApprovalController extends Controller
     /**
      * Display the specified approval.
      */
-    public function show(Approval $approval)
+    public function show(Approval $approval): JsonResponse
     {
         $approval->load(['idea.user', 'idea.category', 'approver']);
 
@@ -92,7 +93,7 @@ class ApprovalController extends Controller
     /**
      * Approve an idea.
      */
-    public function approve(Request $request, Approval $approval, ApprovalWorkflowService $workflowService, NotificationService $notificationService, PointsService $pointsService, \App\Services\GamificationService $gamificationService)
+    public function approve(Request $request, Approval $approval, ApprovalWorkflowService $workflowService, NotificationService $notificationService, PointsService $pointsService, \App\Services\GamificationService $gamificationService): JsonResponse
     {
         // Check authorization
         if ($approval->approver_id !== Auth::id()) {
@@ -161,7 +162,7 @@ class ApprovalController extends Controller
     /**
      * Reject an idea.
      */
-    public function reject(Request $request, Approval $approval, ApprovalWorkflowService $workflowService, NotificationService $notificationService)
+    public function reject(Request $request, Approval $approval, ApprovalWorkflowService $workflowService, NotificationService $notificationService): JsonResponse
     {
         // Check authorization
         if ($approval->approver_id !== Auth::id()) {
@@ -210,7 +211,7 @@ class ApprovalController extends Controller
     /**
      * Get pending approvals count.
      */
-    public function pending()
+    public function pending(): JsonResponse
     {
         $count = Approval::where('approver_id', Auth::id())
             ->where('status', 'pending')
@@ -225,7 +226,7 @@ class ApprovalController extends Controller
     /**
      * Get workflow status for an idea.
      */
-    public function workflowStatus(Idea $idea, ApprovalWorkflowService $workflowService)
+    public function workflowStatus(Idea $idea, ApprovalWorkflowService $workflowService): JsonResponse
     {
         $status = $workflowService->getWorkflowStatus($idea);
 
@@ -238,7 +239,7 @@ class ApprovalController extends Controller
     /**
      * Remove the specified approval.
      */
-    public function destroy(Approval $approval)
+    public function destroy(Approval $approval): JsonResponse
     {
         // Only admins can delete approvals
         if (!Auth::user()->isAdmin()) {

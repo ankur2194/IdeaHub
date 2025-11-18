@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Auth\Events\Verified;
@@ -15,7 +16,7 @@ class AuthController extends Controller
     /**
      * Register a new user.
      */
-    public function register(Request $request)
+    public function register(Request $request): JsonResponse
     {
         $request->validate([
             'name' => 'required|string|max:255',
@@ -49,7 +50,7 @@ class AuthController extends Controller
     /**
      * Login a user.
      */
-    public function login(Request $request)
+    public function login(Request $request): JsonResponse
     {
         $request->validate([
             'email' => 'required|email',
@@ -88,7 +89,7 @@ class AuthController extends Controller
     /**
      * Logout the current user.
      */
-    public function logout(Request $request)
+    public function logout(Request $request): JsonResponse
     {
         $request->user()->currentAccessToken()->delete();
 
@@ -101,7 +102,7 @@ class AuthController extends Controller
     /**
      * Get the authenticated user.
      */
-    public function user(Request $request)
+    public function user(Request $request): JsonResponse
     {
         return response()->json([
             'success' => true,
@@ -112,7 +113,7 @@ class AuthController extends Controller
     /**
      * Send email verification notification.
      */
-    public function sendVerificationEmail(Request $request)
+    public function sendVerificationEmail(Request $request): JsonResponse
     {
         if ($request->user()->hasVerifiedEmail()) {
             return response()->json([
@@ -132,7 +133,7 @@ class AuthController extends Controller
     /**
      * Verify email address.
      */
-    public function verifyEmail(Request $request)
+    public function verifyEmail(Request $request): JsonResponse
     {
         $user = User::findOrFail($request->route('id'));
 
@@ -163,7 +164,7 @@ class AuthController extends Controller
     /**
      * Send password reset link.
      */
-    public function forgotPassword(Request $request)
+    public function forgotPassword(Request $request): JsonResponse
     {
         $request->validate([
             'email' => 'required|email',
@@ -189,7 +190,7 @@ class AuthController extends Controller
     /**
      * Reset password.
      */
-    public function resetPassword(Request $request)
+    public function resetPassword(Request $request): JsonResponse
     {
         $request->validate([
             'token' => 'required',
