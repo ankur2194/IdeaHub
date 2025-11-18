@@ -22,7 +22,13 @@ Route::middleware('throttle:10,1')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/sso/callback', [SsoController::class, 'callback']);
+    Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+    Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 });
+
+// Email verification (public but requires signed URL)
+Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
+    ->name('verification.verify');
 
 // Public read-only routes (no auth required)
 Route::get('/categories', [CategoryController::class, 'index']);
@@ -42,6 +48,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Auth routes
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'user']);
+    Route::post('/email/verification-notification', [AuthController::class, 'sendVerificationEmail'])
+        ->name('verification.send');
 
     // Ideas
     Route::apiResource('ideas', IdeaController::class);

@@ -42,6 +42,19 @@ class ApprovalWorkflowService
                 continue;
             }
 
+            // Budget match (if workflow has budget criteria)
+            if ($workflow->min_budget || $workflow->max_budget) {
+                $ideaBudget = $idea->budget ?? 0;
+
+                if ($workflow->min_budget && $ideaBudget < $workflow->min_budget) {
+                    continue;
+                }
+
+                if ($workflow->max_budget && $ideaBudget > $workflow->max_budget) {
+                    continue;
+                }
+            }
+
             // If all criteria match, use this workflow
             return $workflow;
         }
