@@ -41,7 +41,7 @@ const Register = () => {
     try {
       await dispatch(register(formData)).unwrap();
       navigate('/dashboard');
-    } catch (err) {
+    } catch {
       // Error is handled by Redux slice
     }
   };

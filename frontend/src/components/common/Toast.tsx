@@ -7,7 +7,8 @@ import {
   InformationCircleIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
-import { useToast, Toast as ToastType } from '../../contexts/ToastContext';
+import { useToast } from '../../contexts/ToastContext';
+import type { Toast as ToastType } from '../../contexts/ToastContext';
 
 const Toast: React.FC<{ toast: ToastType }> = ({ toast }) => {
   const { hideToast } = useToast();

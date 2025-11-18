@@ -36,7 +36,6 @@ const IdeaDetail = () => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [commentSubmitting, setCommentSubmitting] = useState(false);
-  const [showNewCommentToast, setShowNewCommentToast] = useState(false);
 
   // Real-time updates for this idea
   useIdeaUpdates(
@@ -56,15 +55,16 @@ const IdeaDetail = () => {
           is_edited: false,
           created_at: commentData.created_at,
           updated_at: commentData.created_at,
-          user: commentData.user,
+          user: {
+            id: commentData.user.id,
+            name: commentData.user.name,
+          } as Comment['user'],
         };
         setComments((prev) => [newComment, ...prev]);
-        setShowNewCommentToast(true);
-        setTimeout(() => setShowNewCommentToast(false), 3000);
       }
     },
     // On idea approved
-    (data) => {
+    () => {
       if (idea) {
         // Refresh the idea to get updated status
         dispatch(fetchIdea(idea.id));

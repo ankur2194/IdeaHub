@@ -1,20 +1,22 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { fetchTags } from '../../store/tagsSlice';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import type { Category } from '../../types';
 
+export interface FilterParams {
+  status?: string;
+  category_id?: number;
+  user_id?: number;
+  tags?: number[];
+  date_from?: string;
+  date_to?: string;
+}
+
 interface AdvancedFiltersProps {
-  filters: {
-    status?: string;
-    category_id?: number;
-    user_id?: number;
-    tags?: number[];
-    date_from?: string;
-    date_to?: string;
-  };
+  filters: FilterParams;
   categories: Category[];
-  onFilterChange: (filters: any) => void;
+  onFilterChange: (filters: FilterParams) => void;
   onClearFilters: () => void;
 }
 
@@ -26,19 +28,15 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
 }) => {
   const dispatch = useAppDispatch();
   const { tags } = useAppSelector((state) => state.tags);
-  const [selectedTags, setSelectedTags] = useState<number[]>(filters.tags || []);
-  const [dateFrom, setDateFrom] = useState(filters.date_from || '');
-  const [dateTo, setDateTo] = useState(filters.date_to || '');
+
+  // Derive state from props instead of using local state
+  const selectedTags = filters.tags || [];
+  const dateFrom = filters.date_from || '';
+  const dateTo = filters.date_to || '';
 
   useEffect(() => {
     dispatch(fetchTags());
   }, [dispatch]);
-
-  useEffect(() => {
-    setSelectedTags(filters.tags || []);
-    setDateFrom(filters.date_from || '');
-    setDateTo(filters.date_to || '');
-  }, [filters]);
 
   const handleStatusChange = (status: string) => {
     onFilterChange({ ...filters, status: status || undefined });
@@ -56,7 +54,6 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
       ? selectedTags.filter((id) => id !== tagId)
       : [...selectedTags, tagId];
 
-    setSelectedTags(newTags);
     onFilterChange({
       ...filters,
       tags: newTags.length > 0 ? newTags : undefined,
@@ -64,7 +61,6 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
   };
 
   const handleDateFromChange = (date: string) => {
-    setDateFrom(date);
     onFilterChange({
       ...filters,
       date_from: date || undefined,
@@ -72,7 +68,6 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
   };
 
   const handleDateToChange = (date: string) => {
-    setDateTo(date);
     onFilterChange({
       ...filters,
       date_to: date || undefined,
