@@ -43,6 +43,9 @@ Route::get('/branding', [BrandingController::class, 'index']);
 Route::get('/sso/providers', [SsoController::class, 'index']);
 Route::get('/sso/{provider}/initiate', [SsoController::class, 'initiate']);
 
+// Webhooks (public - for external integrations)
+Route::post('/webhooks/jira', [IntegrationController::class, 'jiraWebhook']);
+
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
     // Auth routes

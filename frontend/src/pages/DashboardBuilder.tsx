@@ -22,6 +22,7 @@ import type {
   StatsData,
   ChartDataPoint,
 } from '../types/dashboard';
+import * as dashboardService from '../services/dashboardService';
 
 // CSS imports for react-grid-layout
 import 'react-grid-layout/css/styles.css';
@@ -73,49 +74,69 @@ const widgetTypes = [
 ];
 
 export const DashboardBuilder: React.FC = () => {
-  // Initialize state from localStorage using lazy initializer
-  const [widgets, setWidgets] = useState<Widget[]>(() => {
-    const savedDashboard = localStorage.getItem('dashboard');
-    if (savedDashboard) {
-      try {
-        const dashboard: Dashboard = JSON.parse(savedDashboard);
-        return dashboard.widgets;
-      } catch {
-        return [];
-      }
-    }
-    return [];
-  });
-
-  const [layouts, setLayouts] = useState<{ [key: string]: Layout[] }>(() => {
-    const savedDashboard = localStorage.getItem('dashboard');
-    if (savedDashboard) {
-      try {
-        const dashboard: Dashboard = JSON.parse(savedDashboard);
-        const layoutItems = dashboard.widgets.map(w => w.layout);
-        return { lg: layoutItems };
-      } catch {
-        return { lg: [] };
-      }
-    }
-    return { lg: [] };
-  });
-
+  const [widgets, setWidgets] = useState<Widget[]>([]);
+  const [layouts, setLayouts] = useState<{ [key: string]: Layout[] }>({ lg: [] });
   const [dashboardData, setDashboardData] = useState<DashboardData>({});
   const [showWidgetLibrary, setShowWidgetLibrary] = useState(false);
+  const [dashboardName, setDashboardName] = useState<string>('My Dashboard');
+  const [currentDashboardId, setCurrentDashboardId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  const [dashboardName, setDashboardName] = useState<string>(() => {
-    const savedDashboard = localStorage.getItem('dashboard');
-    if (savedDashboard) {
-      try {
-        const dashboard: Dashboard = JSON.parse(savedDashboard);
-        return dashboard.name;
-      } catch {
-        return 'My Dashboard';
+  // Load dashboard from API on mount
+  useEffect(() => {
+    loadDashboard();
+  }, []);
+
+  const loadDashboard = async () => {
+    try {
+      setLoading(true);
+      const dashboards = await dashboardService.getDashboards();
+
+      // Load default dashboard or first available
+      const defaultDashboard = dashboards.find(d => d.is_default) || dashboards[0];
+
+      if (defaultDashboard) {
+        setCurrentDashboardId(defaultDashboard.id);
+        setDashboardName(defaultDashboard.name);
+        setWidgets(defaultDashboard.layout.map(layoutItem => ({
+          id: layoutItem.id,
+          config: {
+            title: layoutItem.title,
+            type: layoutItem.type as WidgetType,
+            dataSource: 'sample',
+            showGrid: true,
+            showLegend: true,
+            showTooltip: true,
+            ...layoutItem.config,
+          },
+          layout: {
+            i: layoutItem.id,
+            x: layoutItem.x,
+            y: layoutItem.y,
+            w: layoutItem.w,
+            h: layoutItem.h,
+            minW: 2,
+            minH: 2,
+          },
+        })));
+
+        const layoutItems = defaultDashboard.layout.map(l => ({
+          i: l.id,
+          x: l.x,
+          y: l.y,
+          w: l.w,
+          h: l.h,
+        }));
+        setLayouts({ lg: layoutItems });
       }
+    } catch (error) {
+      console.error('Failed to load dashboard:', error);
+      // Fall back to empty dashboard
+    } finally {
+      setLoading(false);
     }
-    return 'My Dashboard';
-  });
+  };
 
   // Fetch data for widgets (simulated with sample data)
   useEffect(() => {
@@ -202,20 +223,40 @@ export const DashboardBuilder: React.FC = () => {
   }, []);
 
   // Save dashboard
-  const saveDashboard = useCallback(() => {
-    const dashboard: Dashboard = {
-      id: 'default',
-      name: dashboardName,
-      widgets,
-      layout: widgets.map(w => w.layout),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      isPublic: false,
-    };
+  const saveDashboard = useCallback(async () => {
+    try {
+      setSaving(true);
+      const layout = widgets.map(w => ({
+        id: w.id,
+        type: w.config.type,
+        title: w.config.title,
+        config: w.config,
+        x: w.layout.x,
+        y: w.layout.y,
+        w: w.layout.w,
+        h: w.layout.h,
+      }));
 
-    localStorage.setItem('dashboard', JSON.stringify(dashboard));
-    alert('Dashboard saved successfully!');
-  }, [dashboardName, widgets]);
+      if (currentDashboardId) {
+        // Update existing dashboard
+        await dashboardService.updateDashboard(currentDashboardId, {
+          name: dashboardName,
+          layout,
+        });
+      } else {
+        // Create new dashboard
+        const newDashboard = await dashboardService.createDashboard(dashboardName, layout, true);
+        setCurrentDashboardId(newDashboard.id);
+      }
+
+      alert('Dashboard saved successfully!');
+    } catch (error) {
+      console.error('Failed to save dashboard:', error);
+      alert('Failed to save dashboard. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  }, [dashboardName, widgets, currentDashboardId]);
 
   // Export dashboard
   const exportDashboard = useCallback(() => {

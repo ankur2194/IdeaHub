@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Integration;
 use App\Models\IntegrationLog;
+use App\Services\Integrations\SlackService;
+use App\Services\Integrations\TeamsService;
+use App\Services\Integrations\JiraService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -253,53 +256,318 @@ class IntegrationController extends Controller
 
     /**
      * Perform connection test based on integration type.
-     * This is a placeholder - implement actual testing logic for each integration type.
      */
     private function performConnectionTest(Integration $integration): array
     {
-        // Placeholder implementation
-        // In a real application, you would test the actual connection based on type
+        try {
+            $success = false;
+            $message = '';
 
-        switch ($integration->type) {
-            case 'slack':
-                // Test Slack webhook or API
-                return [
-                    'success' => true,
-                    'message' => 'Slack connection successful',
-                    'tested_at' => now()->toISOString(),
-                ];
+            switch ($integration->type) {
+                case 'slack':
+                    $slackService = app(SlackService::class);
+                    $success = $slackService->testConnection($integration->config);
+                    $message = $success ? 'Slack connection successful' : 'Slack connection failed';
+                    break;
 
-            case 'jira':
-                // Test Jira API
-                return [
-                    'success' => true,
-                    'message' => 'Jira connection successful',
-                    'tested_at' => now()->toISOString(),
-                ];
+                case 'teams':
+                    $teamsService = app(TeamsService::class);
+                    $success = $teamsService->testConnection($integration->config);
+                    $message = $success ? 'Microsoft Teams connection successful' : 'Teams connection failed';
+                    break;
 
-            default:
-                return [
-                    'success' => true,
-                    'message' => 'Connection test successful',
-                    'tested_at' => now()->toISOString(),
-                ];
+                case 'jira':
+                    $jiraService = app(JiraService::class);
+                    $success = $jiraService->testConnection($integration->config);
+                    $message = $success ? 'JIRA connection successful' : 'JIRA connection failed';
+                    break;
+
+                default:
+                    return [
+                        'success' => false,
+                        'message' => "Integration type '{$integration->type}' not supported for testing",
+                        'tested_at' => now()->toISOString(),
+                    ];
+            }
+
+            return [
+                'success' => $success,
+                'message' => $message,
+                'tested_at' => now()->toISOString(),
+                'integration_type' => $integration->type,
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Connection test failed: '.$e->getMessage(),
+                'tested_at' => now()->toISOString(),
+                'error' => $e->getMessage(),
+            ];
         }
     }
 
     /**
      * Perform sync based on integration type.
-     * This is a placeholder - implement actual sync logic for each integration type.
      */
     private function performSync(Integration $integration): array
     {
-        // Placeholder implementation
-        // In a real application, you would perform actual data sync based on type
+        try {
+            $itemsSynced = 0;
+            $details = [];
 
-        return [
-            'success' => true,
-            'message' => 'Sync completed successfully',
-            'synced_at' => now()->toISOString(),
-            'items_synced' => 0,
-        ];
+            switch ($integration->type) {
+                case 'slack':
+                    $slackService = app(SlackService::class);
+                    // Sync recent ideas to Slack (last 24 hours)
+                    $recentIdeas = \App\Models\Idea::where('created_at', '>=', now()->subDay())
+                        ->where('status', 'submitted')
+                        ->get();
+
+                    foreach ($recentIdeas as $idea) {
+                        try {
+                            $slackService->sendNotification(
+                                $integration->config,
+                                "New Idea: {$idea->title}",
+                                ['idea' => $idea->toArray()]
+                            );
+                            $itemsSynced++;
+                        } catch (\Exception $e) {
+                            $details['errors'][] = "Failed to sync idea {$idea->id}: {$e->getMessage()}";
+                        }
+                    }
+
+                    return [
+                        'success' => true,
+                        'message' => "Synced {$itemsSynced} ideas to Slack",
+                        'synced_at' => now()->toISOString(),
+                        'items_synced' => $itemsSynced,
+                        'details' => $details,
+                    ];
+
+                case 'teams':
+                    $teamsService = app(TeamsService::class);
+                    // Sync recent ideas to Teams (last 24 hours)
+                    $recentIdeas = \App\Models\Idea::where('created_at', '>=', now()->subDay())
+                        ->where('status', 'submitted')
+                        ->get();
+
+                    foreach ($recentIdeas as $idea) {
+                        try {
+                            $teamsService->sendNotification(
+                                $integration->config,
+                                "New Idea: {$idea->title}",
+                                ['idea' => $idea->toArray()]
+                            );
+                            $itemsSynced++;
+                        } catch (\Exception $e) {
+                            $details['errors'][] = "Failed to sync idea {$idea->id}: {$e->getMessage()}";
+                        }
+                    }
+
+                    return [
+                        'success' => true,
+                        'message' => "Synced {$itemsSynced} ideas to Microsoft Teams",
+                        'synced_at' => now()->toISOString(),
+                        'items_synced' => $itemsSynced,
+                        'details' => $details,
+                    ];
+
+                case 'jira':
+                    $jiraService = app(JiraService::class);
+                    // Sync approved ideas that don't have a JIRA key yet
+                    $ideasToSync = \App\Models\Idea::where('status', 'approved')
+                        ->whereNull('jira_issue_key')
+                        ->get();
+
+                    foreach ($ideasToSync as $idea) {
+                        try {
+                            $issueKey = $jiraService->syncIdeaToJira($integration, $idea);
+                            $idea->jira_issue_key = $issueKey;
+                            $idea->save();
+                            $itemsSynced++;
+                            $details['synced_issues'][] = $issueKey;
+                        } catch (\Exception $e) {
+                            $details['errors'][] = "Failed to sync idea {$idea->id}: {$e->getMessage()}";
+                        }
+                    }
+
+                    return [
+                        'success' => true,
+                        'message' => "Synced {$itemsSynced} ideas to JIRA",
+                        'synced_at' => now()->toISOString(),
+                        'items_synced' => $itemsSynced,
+                        'details' => $details,
+                    ];
+
+                default:
+                    return [
+                        'success' => false,
+                        'message' => "Integration type '{$integration->type}' not supported for sync",
+                        'synced_at' => now()->toISOString(),
+                        'items_synced' => 0,
+                    ];
+            }
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Sync failed: '.$e->getMessage(),
+                'synced_at' => now()->toISOString(),
+                'items_synced' => 0,
+                'error' => $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Handle JIRA webhook for bidirectional sync.
+     */
+    public function jiraWebhook(Request $request): JsonResponse
+    {
+        try {
+            // Validate webhook signature if configured
+            $webhookSecret = config('integrations.jira_webhook_secret');
+            if ($webhookSecret) {
+                $signature = $request->header('X-Hub-Signature');
+                if (! $this->validateWebhookSignature($request->getContent(), $signature, $webhookSecret)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Invalid webhook signature',
+                    ], 401);
+                }
+            }
+
+            $payload = $request->all();
+            $event = $request->header('X-Event-Key') ?? $payload['webhookEvent'] ?? null;
+
+            if (! $event) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Missing event type',
+                ], 400);
+            }
+
+            // Find JIRA integration
+            $integration = Integration::where('type', 'jira')->where('is_active', true)->first();
+
+            if (! $integration) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No active JIRA integration found',
+                ], 404);
+            }
+
+            // Handle different JIRA events
+            switch ($event) {
+                case 'jira:issue_updated':
+                    $this->handleJiraIssueUpdated($integration, $payload);
+                    break;
+
+                case 'jira:issue_deleted':
+                    $this->handleJiraIssueDeleted($integration, $payload);
+                    break;
+
+                default:
+                    // Log unknown event but return success
+                    IntegrationLog::create([
+                        'integration_id' => $integration->id,
+                        'action' => 'webhook_received',
+                        'status' => 'success',
+                        'payload' => [
+                            'event' => $event,
+                            'message' => 'Event not handled',
+                        ],
+                    ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Webhook processed successfully',
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Webhook processing failed',
+                'errors' => ['webhook' => $e->getMessage()],
+            ], 500);
+        }
+    }
+
+    /**
+     * Handle JIRA issue updated event.
+     */
+    protected function handleJiraIssueUpdated(Integration $integration, array $payload): void
+    {
+        try {
+            $issueKey = $payload['issue']['key'] ?? null;
+
+            if (! $issueKey) {
+                return;
+            }
+
+            $jiraService = app(\App\Services\Integrations\JiraService::class);
+            $jiraService->syncJiraToIdea($integration, $issueKey);
+
+        } catch (\Exception $e) {
+            IntegrationLog::create([
+                'integration_id' => $integration->id,
+                'action' => 'webhook_issue_updated',
+                'status' => 'failed',
+                'payload' => $payload,
+                'error_message' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Handle JIRA issue deleted event.
+     */
+    protected function handleJiraIssueDeleted(Integration $integration, array $payload): void
+    {
+        try {
+            $issueKey = $payload['issue']['key'] ?? null;
+
+            if (! $issueKey) {
+                return;
+            }
+
+            // Find idea with this JIRA key and clear the reference
+            \App\Models\Idea::where('jira_issue_key', $issueKey)->update([
+                'jira_issue_key' => null,
+            ]);
+
+            IntegrationLog::create([
+                'integration_id' => $integration->id,
+                'action' => 'webhook_issue_deleted',
+                'status' => 'success',
+                'payload' => [
+                    'issue_key' => $issueKey,
+                    'message' => 'JIRA issue reference cleared from ideas',
+                ],
+            ]);
+
+        } catch (\Exception $e) {
+            IntegrationLog::create([
+                'integration_id' => $integration->id,
+                'action' => 'webhook_issue_deleted',
+                'status' => 'failed',
+                'payload' => $payload,
+                'error_message' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Validate webhook signature.
+     */
+    protected function validateWebhookSignature(string $payload, ?string $signature, string $secret): bool
+    {
+        if (! $signature) {
+            return false;
+        }
+
+        $expectedSignature = 'sha256='.hash_hmac('sha256', $payload, $secret);
+
+        return hash_equals($expectedSignature, $signature);
     }
 }
