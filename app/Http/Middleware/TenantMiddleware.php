@@ -19,6 +19,14 @@ class TenantMiddleware
         $tenant = $this->identifyTenant($request);
 
         if ($tenant) {
+            // Validate that authenticated user belongs to this tenant
+            if ($request->user() && $request->user()->tenant_id !== $tenant->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Access denied. You do not have permission to access this tenant.',
+                ], 403);
+            }
+
             // Store tenant in app container and session
             app()->instance('current_tenant_id', $tenant->id);
             app()->instance('current_tenant', $tenant);
@@ -39,13 +47,22 @@ class TenantMiddleware
                     'message' => 'Your trial has expired. Please subscribe to continue using IdeaHub.',
                 ], 403);
             }
+        } elseif ($request->user()) {
+            // If no tenant identified but user is authenticated, use their tenant
+            $tenant = $request->user()->tenant;
+
+            if ($tenant) {
+                app()->instance('current_tenant_id', $tenant->id);
+                app()->instance('current_tenant', $tenant);
+                session(['tenant_id' => $tenant->id]);
+            }
         }
 
         return $next($request);
     }
 
     /**
-     * Identify tenant from the request
+     * Identify tenant from the request (domain/subdomain only)
      */
     protected function identifyTenant(Request $request): ?Tenant
     {
@@ -67,12 +84,6 @@ class TenantMiddleware
             if ($tenant) {
                 return $tenant;
             }
-        }
-
-        // For API requests, tenant should be identified by user's tenant assignment
-        // Check if user is authenticated and use their tenant
-        if ($request->user()) {
-            return $request->user()->tenant;
         }
 
         return null;

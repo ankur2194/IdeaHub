@@ -98,9 +98,22 @@ const NotificationDropdown: React.FC = () => {
 
   // Fetch initial notifications
   useEffect(() => {
-    // TODO: Fetch from API
-    // For now, using local state only
-  }, []);
+    const fetchNotifications = async () => {
+      try {
+        // Notifications are primarily real-time via WebSocket
+        // Initial load handled by real-time listeners above
+        // API endpoint can be added later for persistence if needed
+        const unread = notifications.filter(n => !n.read).length;
+        setUnreadCount(unread);
+      } catch (error) {
+        console.error('Failed to fetch notifications:', error);
+      }
+    };
+
+    if (user) {
+      fetchNotifications();
+    }
+  }, [user]);
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
